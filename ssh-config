@@ -1,0 +1,8 @@
+# add this to ~/.ssh/config and mkdir -p ~/.ssh/connections for multiplexed connections
+
+Host 66.175.211.57
+  HostName 66.175.211.57
+  User root
+  ControlPath ~/.ssh/connections/%r@%h:%p.socket
+  ControlMaster auto
+  ControlPersist 10m
