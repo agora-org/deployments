@@ -1,25 +1,38 @@
+athens := "66.175.216.63"
+kos := "66.175.211.57"
+export PRODUCTION := "false"
+host := if PRODUCTION == "true" { athens } else { kos }
+
 run +target: sync-justfile
-  ssh root@66.175.211.57 'just {{ target }}'
+  ssh root@{{ host }} 'just {{ target }}'
 
 ssh:
-  ssh root@66.175.211.57
+  ssh root@{{ host }}
 
 sync-justfile:
-  scp justfile root@66.175.211.57:
+  scp justfile root@{{ host }}:
 
 setup-from-local target="setup":
-  scp 50reboot-on-upgrades root@66.175.211.57:/etc/apt/apt.conf.d/
+  #!/usr/bin/env bash
+  set -euxo pipefail
 
-  scp bitcoind.service root@66.175.211.57:/etc/systemd/system/
-  ssh root@66.175.211.57 'mkdir -p /etc/bitcoin'
-  ssh root@66.175.211.57 'chmod 710 /etc/bitcoin'
-  scp bitcoin.conf root@66.175.211.57:/etc/bitcoin/
+  scp 50reboot-on-upgrades root@{{ host }}:/etc/apt/apt.conf.d/
 
-  scp lnd.service root@66.175.211.57:/etc/systemd/system/
-  ssh root@66.175.211.57 'mkdir -p /etc/lnd'
-  ssh root@66.175.211.57 'chmod 710 /etc/lnd'
-  ssh root@66.175.211.57 'echo -n foofoofoo > /etc/lnd/wallet-password'
-  scp lnd.conf root@66.175.211.57:/etc/lnd/
+  scp bitcoind.service root@{{ host }}:/etc/systemd/system/
+  ssh root@{{ host }} 'mkdir -p /etc/bitcoin'
+  ssh root@{{ host }} 'chmod 710 /etc/bitcoin'
+  mkdir -p tmp
+  rm -f tmp/*
+  ./render-template bitcoin.conf > tmp/bitcoin.conf
+  scp tmp/bitcoin.conf root@{{ host }}:/etc/bitcoin/bitcoin.conf
+
+  scp lnd.service root@{{ host }}:/etc/systemd/system/
+  ssh root@{{ host }} 'mkdir -p /etc/lnd'
+  ssh root@{{ host }} 'chmod 710 /etc/lnd'
+
+  ./render-template lnd.conf > tmp/lnd.conf
+  scp tmp/lnd.conf root@{{ host }}:/etc/lnd/lnd.conf
+  bark
   just run {{ target }}
 
 setup: root-check install-base-packages setup-bitcoind setup-lnd
@@ -49,6 +62,7 @@ install-base-packages:
 setup-bitcoind:
   #!/usr/bin/env bash
   set -euxo pipefail
+  bark check for volume
   if ! which bitcoind; then
     wget -O bitcoin.tar.gz 'https://bitcoin.org/bin/bitcoin-core-0.21.1/bitcoin-0.21.1-x86_64-linux-gnu.tar.gz'
     echo '366eb44a7a0aa5bd342deea215ec19a184a11f2ca22220304ebb20b9c8917e2b bitcoin.tar.gz' | sha256sum -c -
@@ -64,6 +78,7 @@ lnd-version := "v0.13.0-beta.rc5"
 setup-lnd: root-check
   #!/usr/bin/env bash
   set -euxo pipefail
+  bark setup lnd
   if ! lnd --version | grep {{lnd-version}}; then
     wget -O lnd-linux-amd64-{{lnd-version}}.tar.gz \
       'https://github.com/lightningnetwork/lnd/releases/download/{{lnd-version}}/lnd-linux-amd64-{{lnd-version}}.tar.gz'
@@ -74,6 +89,8 @@ setup-lnd: root-check
   lnd --version
   systemctl daemon-reload
   systemctl restart lnd
+  bark create wallet
+  # ssh root@{{ host }} 'echo -n foofoofoo > /etc/lnd/wallet-password'
 
 lncli +command: root-check
   lncli --network testnet --lnddir=/var/lib/lnd {{ command }}

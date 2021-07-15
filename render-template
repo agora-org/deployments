@@ -1,0 +1,44 @@
+#!/usr/bin/env -S rust-script --cargo-output --
+//! ```cargo
+//! [dependencies]
+//! structopt = "=0.3.22"
+//! tera = "=1.12.1"
+//! ```
+
+use std::path::PathBuf;
+use structopt::StructOpt;
+use tera::{Context, Tera};
+
+#[derive(StructOpt, Debug)]
+struct Args {
+    template: PathBuf,
+}
+
+fn main() {
+    let args = Args::from_args();
+    let mut context = Context::new();
+    let production = std::env::var("PRODUCTION")
+        .unwrap()
+        .parse::<bool>()
+        .unwrap();
+    context.insert("network", if production { "mainnet" } else { "testnet" });
+    context.insert(
+        "ipv4",
+        if production {
+            "66.175.216.63"
+        } else {
+            "66.175.211.57"
+        },
+    );
+    context.insert(
+        "ipv6",
+        if production {
+            "2600:3c01::f03c:92ff:fe75:056f"
+        } else {
+            "2600:3c03::f03c:92ff:fe31:d717"
+        },
+    );
+    let template = std::fs::read_to_string(args.template).unwrap();
+    let result = Tera::one_off(&template, &context, false).unwrap();
+    print!("{}", result);
+}
