@@ -8,16 +8,18 @@ sync-justfile:
   scp justfile root@66.175.211.57:
 
 setup-from-local target="setup":
-  scp bitcoind.service root@66.175.211.57:/etc/systemd/system/bitcoind.service
+  scp 50reboot-on-upgrades root@66.175.211.57:/etc/apt/apt.conf.d/
+
+  scp bitcoind.service root@66.175.211.57:/etc/systemd/system/
   ssh root@66.175.211.57 'mkdir -p /etc/bitcoin'
   ssh root@66.175.211.57 'chmod 710 /etc/bitcoin'
-  scp bitcoin.conf root@66.175.211.57:/etc/bitcoin/bitcoin.conf
+  scp bitcoin.conf root@66.175.211.57:/etc/bitcoin/
 
-  scp lnd.service root@66.175.211.57:/etc/systemd/system/lnd.service
+  scp lnd.service root@66.175.211.57:/etc/systemd/system/
   ssh root@66.175.211.57 'mkdir -p /etc/lnd'
   ssh root@66.175.211.57 'chmod 710 /etc/lnd'
   ssh root@66.175.211.57 'echo -n foofoofoo > /etc/lnd/wallet-password'
-  scp lnd.conf root@66.175.211.57:/etc/lnd/lnd.conf
+  scp lnd.conf root@66.175.211.57:/etc/lnd/
   just run {{ target }}
 
 setup: root-check install-base-packages setup-bitcoind setup-lnd
@@ -33,7 +35,13 @@ root-check:
 install-base-packages:
   #!/usr/bin/env bash
   set -euxo pipefail
-  apt-get install --yes tree vim atool jq
+  apt-get install --yes \
+    atool \
+    jq \
+    tree \
+    unattended-upgrades \
+    update-notifier-common \
+    vim
   if ! grep _just /root/.bashrc; then
     just --completions bash >> /root/.bashrc
   fi
