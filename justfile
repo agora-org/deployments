@@ -16,6 +16,7 @@ sync-justfile:
 # todo:
 # - figure out password file
 # - figure out wallet creation
+# - set blockdir to /mnt/athens/blocks
 
 setup-from-local target="setup":
   #!/usr/bin/env bash
@@ -44,7 +45,7 @@ setup-from-local target="setup":
 
   just PRODUCTION={{ PRODUCTION }} run {{ target }}
 
-setup: root-check set-hostname install-base-packages setup-volume setup-bitcoind setup-lnd
+setup: root-check install-base-packages install-rust set-hostname setup-volume setup-bitcoind setup-lnd
 
 root-check:
   #!/usr/bin/env bash
@@ -54,14 +55,12 @@ root-check:
     false
   fi
 
-set-hostname:
-  hostnamectl set-hostname {{ hostname }}
-
 install-base-packages:
   #!/usr/bin/env bash
   set -euxo pipefail
   apt-get install --yes \
     atool \
+    build-essential \
     jq \
     tree \
     unattended-upgrades \
@@ -70,6 +69,22 @@ install-base-packages:
   if ! grep _just /root/.bashrc; then
     just --completions bash >> /root/.bashrc
   fi
+
+install-rust:
+  cat ~/.bashrc | head -1 | grep .cargo/env || \
+    sed \
+      -i \
+      '1s:^:[ -f "$HOME/.cargo/env" ] \&\& . "$HOME/.cargo/env"\n:' \
+      ~/.bashrc
+
+  rustup --version || \
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
+    sh -s -- -y
+
+  cargo install rust-script
+
+set-hostname:
+  hostnamectl set-hostname {{ hostname }}
 
 setup-volume:
   #!/usr/bin/env bash
