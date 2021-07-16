@@ -21,7 +21,9 @@ fn main() {
         .unwrap()
         .parse::<bool>()
         .unwrap();
-    context.insert("network", if production { "mainnet" } else { "testnet" });
+    if production {
+        context.insert("blocksdir", "/mnt/athens/blocks");
+    }
     context.insert(
         "ipv4",
         if production {
@@ -38,6 +40,7 @@ fn main() {
             "2600:3c03::f03c:92ff:fe31:d717"
         },
     );
+    context.insert("network", if production { "mainnet" } else { "testnet" });
     let template = std::fs::read_to_string(args.template).unwrap();
     let result = Tera::one_off(&template, &context, false).unwrap();
     print!("{}", result);

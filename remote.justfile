@@ -1,9 +1,10 @@
-PRODUCTION := "false"
-
-hostname := if PRODUCTION == "true" { "athens" } else { "kos" }
 lnd-version := "v0.13.0-beta.rc5"
+production := if `hostname` == "athens" { "true" } else { "false" }
 
-setup: install-base-packages install-rust set-hostname setup-volume setup-bitcoind setup-lnd
+tail-logs:
+  journalctl -f -u bitcoind -u lnd
+
+setup: install-base-packages install-rust setup-volume setup-bitcoind setup-lnd
 
 install-base-packages:
   #!/usr/bin/env bash
@@ -33,14 +34,11 @@ install-rust:
 
   cargo install rust-script
 
-set-hostname:
-  hostnamectl set-hostname {{ hostname }}
-
 setup-volume:
   #!/usr/bin/env bash
   set -euxo pipefail
 
-  if [[ {{ PRODUCTION }} != true ]]; then
+  if [[ {{ production }} != true ]]; then
     exit
   fi
 
@@ -58,7 +56,6 @@ setup-volume:
 setup-bitcoind:
   #!/usr/bin/env bash
   set -euxo pipefail
-  bark check for volume
   if ! which bitcoind; then
     wget -O bitcoin.tar.gz 'https://bitcoin.org/bin/bitcoin-core-0.21.1/bitcoin-0.21.1-x86_64-linux-gnu.tar.gz'
     echo '366eb44a7a0aa5bd342deea215ec19a184a11f2ca22220304ebb20b9c8917e2b bitcoin.tar.gz' | sha256sum -c -
@@ -66,13 +63,16 @@ setup-bitcoind:
   fi
   bitcoind --version
   id --user bitcoin &>/dev/null || useradd --system bitcoin
+  if [[ {{ production }} == true ]]; then
+    mkdir -p /mnt/athens/blocks
+    chown bitcoin:bitcoin /mnt/athens/blocks
+  fi
   systemctl daemon-reload
   systemctl restart bitcoind
 
 setup-lnd:
   #!/usr/bin/env bash
   set -euxo pipefail
-  bark setup lnd
   if ! lnd --version | grep {{lnd-version}}; then
     wget -O lnd-linux-amd64-{{lnd-version}}.tar.gz \
       'https://github.com/lightningnetwork/lnd/releases/download/{{lnd-version}}/lnd-linux-amd64-{{lnd-version}}.tar.gz'
@@ -88,9 +88,6 @@ setup-lnd:
 
 lncli +command:
   lncli --network testnet --lnddir=/var/lib/lnd {{ command }}
-
-tail-logs:
-  journalctl -f -u bitcoind -u lnd
 
 curl-lnd:
   #!/usr/bin/env bash
