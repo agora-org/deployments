@@ -2,6 +2,7 @@ athens := "66.175.216.63"
 kos := "66.175.211.57"
 export PRODUCTION := "false"
 host := if PRODUCTION == "true" { athens } else { kos }
+hostname := if PRODUCTION == "true" { "athens" } else { "kos" }
 
 run +target: sync-justfile
   ssh root@{{ host }} 'just {{ target }}'
@@ -11,6 +12,10 @@ ssh:
 
 sync-justfile:
   scp justfile root@{{ host }}:
+
+# todo:
+# - figure out password file
+# - figure out wallet creation
 
 setup-from-local target="setup":
   #!/usr/bin/env bash
@@ -24,18 +29,18 @@ setup-from-local target="setup":
   mkdir -p tmp
   rm -f tmp/*
   ./render-template bitcoin.conf > tmp/bitcoin.conf
-  scp tmp/bitcoin.conf root@{{ host }}:/etc/bitcoin/bitcoin.conf
+  scp tmp/bitcoin.conf root@{{ host }}:/etc/bitcoin/
 
   scp lnd.service root@{{ host }}:/etc/systemd/system/
   ssh root@{{ host }} 'mkdir -p /etc/lnd'
   ssh root@{{ host }} 'chmod 710 /etc/lnd'
 
   ./render-template lnd.conf > tmp/lnd.conf
-  scp tmp/lnd.conf root@{{ host }}:/etc/lnd/lnd.conf
-  bark
-  just run {{ target }}
+  scp tmp/lnd.conf root@{{ host }}:/etc/lnd/
 
-setup: root-check install-base-packages setup-bitcoind setup-lnd
+  just PRODUCTION={{ PRODUCTION }} run {{ target }}
+
+setup: root-check set-hostname install-base-packages setup-bitcoind setup-lnd
 
 root-check:
   #!/usr/bin/env bash
@@ -44,6 +49,9 @@ root-check:
     echo you are not root!
     false
   fi
+
+set-hostname:
+  hostnamectl set-hostname {{ hostname }}
 
 install-base-packages:
   #!/usr/bin/env bash
