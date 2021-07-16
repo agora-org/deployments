@@ -5,7 +5,7 @@ host := if PRODUCTION == "true" { athens } else { kos }
 hostname := if PRODUCTION == "true" { "athens" } else { "kos" }
 
 run +target: sync-justfile
-  ssh root@{{ host }} 'just {{ target }}'
+  ssh root@{{ host }} 'just PRODUCTION={{ PRODUCTION }} {{ target }}'
 
 ssh:
   ssh root@{{ host }}
@@ -38,9 +38,13 @@ setup-from-local target="setup":
   ./render-template lnd.conf > tmp/lnd.conf
   scp tmp/lnd.conf root@{{ host }}:/etc/lnd/
 
+  ssh root@{{ host }} 'just --version || \
+    curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | \
+    bash -s -- --to /usr/local/bin'
+
   just PRODUCTION={{ PRODUCTION }} run {{ target }}
 
-setup: root-check set-hostname install-base-packages setup-bitcoind setup-lnd
+setup: root-check set-hostname install-base-packages setup-volume setup-bitcoind setup-lnd
 
 root-check:
   #!/usr/bin/env bash
@@ -66,6 +70,25 @@ install-base-packages:
   if ! grep _just /root/.bashrc; then
     just --completions bash >> /root/.bashrc
   fi
+
+setup-volume:
+  #!/usr/bin/env bash
+  set -euxo pipefail
+
+  if [[ $PRODUCTION != true ]]; then
+    exit
+  fi
+
+  if [[ -n `e2label /dev/disk/by-id/scsi-0Linode_Volume_athens` ]]; then
+    exit
+  fi
+
+  mkfs.ext4 -L athens /dev/disk/by-id/scsi-0Linode_Volume_athens
+  mkdir /mnt/athens
+  mount /dev/disk/by-id/scsi-0Linode_Volume_athens /mnt/athens
+  echo \
+    '/dev/disk/by-id/scsi-0Linode_Volume_athens /mnt/athens ext4 defaults,noatime,nofail 0 2' \
+    >> /etc/fstab
 
 setup-bitcoind:
   #!/usr/bin/env bash
