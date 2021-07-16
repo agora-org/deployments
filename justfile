@@ -16,7 +16,6 @@ sync-justfile:
 # todo:
 # - figure out password file
 # - figure out wallet creation
-# - set blockdir to /mnt/athens/blocks
 
 render-templates:
   mkdir -p tmp
@@ -44,6 +43,12 @@ setup-from-local target="setup": render-templates
   ssh root@{{ host }} 'just --version || \
     curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | \
     bash -s -- --to /usr/local/bin'
+
+  ssh root@{{ host }} 'cat ~/.bashrc' | head -1 | grep .cargo/env || \
+    ssh root@{{ host }} sed \
+      -i \
+      '"1s;^;export PATH=\"\$HOME/.cargo/bin:\$PATH\"\n;"' \
+      '~/.bashrc'
 
   ssh root@{{ host }} 'hostnamectl set-hostname {{ hostname }}'
 

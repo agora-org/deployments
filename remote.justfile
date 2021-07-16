@@ -1,4 +1,4 @@
-lnd-version := "v0.13.0-beta.rc5"
+lnd-version := "v0.13.0-beta"
 production := if `hostname` == "athens" { "true" } else { "false" }
 
 tail-logs:
@@ -22,15 +22,9 @@ install-base-packages:
   fi
 
 install-rust:
-  cat ~/.bashrc | head -1 | grep .cargo/env || \
-    sed \
-      -i \
-      '1s:^:[ -f "$HOME/.cargo/env" ] \&\& . "$HOME/.cargo/env"\n:' \
-      ~/.bashrc
-
   rustup --version || \
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
-    sh -s -- -y
+    sh -s -- -y --no-modify-path
 
   cargo install rust-script
 

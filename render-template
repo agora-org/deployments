@@ -22,7 +22,7 @@ fn main() {
         .parse::<bool>()
         .unwrap();
     if production {
-        context.insert("blocksdir", "/mnt/athens/blocks");
+        context.insert("blocksdir", "/mnt/athens/");
     }
     context.insert(
         "ipv4",
