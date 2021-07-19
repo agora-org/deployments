@@ -21,7 +21,7 @@ test-on-vagrant:
   vagrant up
   ssh-keyscan 192.168.50.4 >> ~/.ssh/known_hosts
   just TARGET=vagrant setup-from-local
-  ssh 192.168.50.4 just tail-logs
+  ssh root@192.168.50.4 just tail-logs
 
 run +target: sync-justfile
   ssh root@{{ host }} 'just {{ target }}'
