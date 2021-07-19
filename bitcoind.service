@@ -1,6 +1,7 @@
 [Unit]
 Description=Bitcoin daemon
 After=network.target
+{{ bitcoind_requires }}
 
 [Service]
 ExecStart=/usr/local/bin/bitcoind \

@@ -36,6 +36,7 @@ sync-justfile:
 render-templates:
   mkdir -p tmp
   rm -f tmp/*
+  ./render-template bitcoind.service > tmp/bitcoind.service
   ./render-template bitcoin.conf > tmp/bitcoin.conf
   ./render-template lnd.conf > tmp/lnd.conf
 
@@ -45,10 +46,13 @@ setup-from-local target="setup": render-templates
 
   scp 50reboot-on-upgrades root@{{ host }}:/etc/apt/apt.conf.d/
 
-  scp bitcoind.service root@{{ host }}:/etc/systemd/system/
+  scp tmp/bitcoind.service root@{{ host }}:/etc/systemd/system/
   ssh root@{{ host }} 'mkdir -p /etc/bitcoin'
   ssh root@{{ host }} 'chmod 710 /etc/bitcoin'
   scp tmp/bitcoin.conf root@{{ host }}:/etc/bitcoin/
+  if [[ {{ TARGET }} == "athens" ]]; then
+    scp mnt-athens.mount root@{{ host }}:/etc/systemd/system/
+  fi
 
   scp lnd.service root@{{ host }}:/etc/systemd/system/
   ssh root@{{ host }} 'mkdir -p /etc/lnd'

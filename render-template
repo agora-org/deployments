@@ -47,6 +47,14 @@ fn main() {
             "testnet"
         },
     );
+    context.insert(
+        "bitcoind_requires",
+        if target == "athens" {
+            "Requires=mnt-athens.mount"
+        } else {
+            ""
+        },
+    );
     let template = std::fs::read_to_string(args.template).unwrap();
     let result = Tera::one_off(&template, &context, false).unwrap();
     print!("{}", result);

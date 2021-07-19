@@ -41,11 +41,6 @@ setup-volume:
   fi
 
   mkfs.ext4 -L athens /dev/disk/by-id/scsi-0Linode_Volume_athens
-  mkdir /mnt/athens
-  mount /dev/disk/by-id/scsi-0Linode_Volume_athens /mnt/athens
-  echo \
-    '/dev/disk/by-id/scsi-0Linode_Volume_athens /mnt/athens ext4 defaults,noatime,nofail 0 2' \
-    >> /etc/fstab
 
 setup-bitcoind:
   #!/usr/bin/env bash
@@ -62,6 +57,7 @@ setup-bitcoind:
     chown bitcoin:bitcoin /mnt/athens/blocks
   fi
   systemctl daemon-reload
+  systemctl enable bitcoind
   systemctl restart bitcoind
 
 setup-lnd:
@@ -76,6 +72,7 @@ setup-lnd:
   fi
   lnd --version
   systemctl daemon-reload
+  systemctl enable lnd
   systemctl restart lnd
   bark create wallet
   # ssh root@host 'echo -n foofoofoo > /etc/lnd/wallet-password'
