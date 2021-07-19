@@ -4,11 +4,12 @@ production := if `hostname` == "athens" { "true" } else { "false" }
 tail-logs:
   journalctl -f -u bitcoind -u lnd
 
-setup: install-base-packages install-rust setup-volume setup-bitcoind setup-lnd
+setup: install-base-packages install-rust setup-volume setup-bitcoind # setup-lnd
 
 install-base-packages:
   #!/usr/bin/env bash
   set -euxo pipefail
+  apt-get update
   apt-get install --yes \
     atool \
     build-essential \

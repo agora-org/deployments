@@ -1,11 +1,27 @@
 athens := "66.175.216.63"
 kos := "66.175.211.57"
-export PRODUCTION := "false"
-host := if PRODUCTION == "true" { athens } else { kos }
-hostname := if PRODUCTION == "true" { "athens" } else { "kos" }
+vagrant := "192.168.50.4"
+export TARGET := "vagrant"
+host := if TARGET == "athens" {
+  athens
+} else {
+  if TARGET == "kos" {
+    kos
+  } else {
+    vagrant
+  }
+}
+hostname := TARGET
 
 ssh:
   ssh root@{{ host }}
+
+test-on-vagrant:
+  ssh-keygen -f "/home/shahn/.ssh/known_hosts" -R "192.168.50.4"
+  vagrant up
+  ssh-keyscan 192.168.50.4 >> ~/.ssh/known_hosts
+  just TARGET=vagrant setup-from-local
+  ssh 192.168.50.4 just tail-logs
 
 run +target: sync-justfile
   ssh root@{{ host }} 'just {{ target }}'
@@ -52,4 +68,4 @@ setup-from-local target="setup": render-templates
 
   ssh root@{{ host }} 'hostnamectl set-hostname {{ hostname }}'
 
-  just PRODUCTION={{ PRODUCTION }} run {{ target }}
+  just TARGET={{ TARGET }} run {{ target }}

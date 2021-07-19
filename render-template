@@ -17,30 +17,36 @@ struct Args {
 fn main() {
     let args = Args::from_args();
     let mut context = Context::new();
-    let production = std::env::var("PRODUCTION")
-        .unwrap()
-        .parse::<bool>()
-        .unwrap();
-    if production {
+    let target = std::env::var("TARGET").unwrap();
+    if target == "athens" {
         context.insert("blocksdir", "/mnt/athens/");
     }
     context.insert(
         "ipv4",
-        if production {
-            "66.175.216.63"
-        } else {
-            "66.175.211.57"
+        match target.as_str() {
+            "athens" => "66.175.216.63",
+            "kos" => "66.175.211.57",
+            "vagrant" => "192.168.50.4",
+            _ => panic!(),
         },
     );
     context.insert(
         "ipv6",
-        if production {
-            "2600:3c01::f03c:92ff:fe75:056f"
-        } else {
-            "2600:3c03::f03c:92ff:fe31:d717"
+        match target.as_str() {
+            "athens" => "2600:3c01::f03c:92ff:fe75:056f",
+            "kos" => "2600:3c03::f03c:92ff:fe31:d717",
+            "vagrant" => "fde4:8dba:82e1::c4",
+            _ => panic!(),
         },
     );
-    context.insert("network", if production { "mainnet" } else { "testnet" });
+    context.insert(
+        "network",
+        if target == "athens" {
+            "mainnet"
+        } else {
+            "testnet"
+        },
+    );
     let template = std::fs::read_to_string(args.template).unwrap();
     let result = Tera::one_off(&template, &context, false).unwrap();
     print!("{}", result);
