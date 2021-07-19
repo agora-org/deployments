@@ -51,6 +51,7 @@ setup-from-local recipe="setup": render-templates
   const TARGET: &str = "{{ TARGET }}";
   const HOST: &str = "{{ host }}";
   const HOSTNAME: &str = "{{ hostname }}";
+  const RECIPE: &str = "{{ recipe }}";
 
   fn scp(source: &str, destination: &str) {
     cmd_unit!(LogCommand, "scp", source, format!("root@{}:{}", HOST, destination));
@@ -102,5 +103,5 @@ setup-from-local recipe="setup": render-templates
     install_just();
     add_cargo_bin_to_path();
     let () = ssh(("hostnamectl", "set-hostname", HOSTNAME));
-    cmd_unit!("just", format!("TARGET={}", TARGET), "run", "{{ recipe }}");
+    cmd_unit!("just", format!("TARGET={}", TARGET), "run", RECIPE);
   }
