@@ -23,6 +23,11 @@ test-on-vagrant:
   just TARGET=vagrant setup-from-local
   ssh root@192.168.50.4 just tail-logs
 
+test-render-templates:
+  just TARGET=vagrant render-templates
+  just TARGET=kos render-templates
+  just TARGET=athens render-templates
+
 run +args: sync-justfile
   ssh root@{{ host }} 'just {{ args }}'
 

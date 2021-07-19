@@ -3,9 +3,10 @@
 //! [dependencies]
 //! structopt = "=0.3.22"
 //! tera = "=1.12.1"
+//! serde_yaml = "=0.8.17"
 //! ```
 
-use std::path::PathBuf;
+use std::{fs, path::PathBuf};
 use structopt::StructOpt;
 use tera::{Context, Tera};
 
@@ -14,47 +15,17 @@ struct Args {
     template: PathBuf,
 }
 
+fn read_config(target: &str) -> serde_yaml::Value {
+    serde_yaml::from_str::<serde_yaml::Value>(&fs::read_to_string("config.yaml").unwrap()).unwrap()
+        [target]
+        .clone()
+}
+
 fn main() {
     let args = Args::from_args();
-    let mut context = Context::new();
     let target = std::env::var("TARGET").unwrap();
-    if target == "athens" {
-        context.insert("blocksdir", "/mnt/athens/");
-    }
-    context.insert(
-        "ipv4",
-        match target.as_str() {
-            "athens" => "66.175.216.63",
-            "kos" => "66.175.211.57",
-            "vagrant" => "192.168.50.4",
-            _ => panic!(),
-        },
-    );
-    context.insert(
-        "ipv6",
-        match target.as_str() {
-            "athens" => "2600:3c01::f03c:92ff:fe75:056f",
-            "kos" => "2600:3c03::f03c:92ff:fe31:d717",
-            "vagrant" => "fde4:8dba:82e1::c4",
-            _ => panic!(),
-        },
-    );
-    context.insert(
-        "network",
-        if target == "athens" {
-            "mainnet"
-        } else {
-            "testnet"
-        },
-    );
-    context.insert(
-        "bitcoind_requires",
-        if target == "athens" {
-            "Requires=mnt-athens.mount"
-        } else {
-            ""
-        },
-    );
+    let config = read_config(&target);
+    let context = Context::from_serialize(&config).unwrap();
     let template = std::fs::read_to_string(args.template).unwrap();
     let result = Tera::one_off(&template, &context, false).unwrap();
     print!("{}", result);
