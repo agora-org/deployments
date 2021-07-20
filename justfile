@@ -18,6 +18,8 @@ test-render-templates:
 run +args: sync-justfile
   ssh root@{{ host }} 'just {{ args }}'
 
+lncli +args: (run "lncli" args)
+
 sync-justfile:
   scp remote.justfile root@{{ host }}:justfile
 
