@@ -1,5 +1,4 @@
 host := `cat config.yaml | yq .$HOSTNAME.ipv4 -r`
-hostname := env_var("HOSTNAME")
 
 ssh:
   ssh root@{{ host }}
