@@ -7,9 +7,10 @@ Vagrant.configure("2") do |config|
   config.vm.network "private_network", ip: "192.168.50.4"
   config.vm.network "private_network", ip: "fde4:8dba:82e1::c4"
   config.vm.provision "shell" do |s|
-    ssh_pub_key = File.readlines("#{Dir.home}/.ssh/id_rsa.pub").first.strip
-    s.inline = <<-SHELL
-      echo #{ssh_pub_key} >> /root/.ssh/authorized_keys
-    SHELL
+    s.inline = ""
+    Dir.glob("#{Dir.home}/.ssh/*.pub").each do |path|
+      key = File.read(path).strip
+      s.inline << "echo '#{key}' >> /root/.ssh/authorized_keys\n"
+    end
   end
 end

@@ -1,10 +1,10 @@
-host := `cat config.yaml | yq .$HOSTNAME.ipv4 -r`
+host := `cat config.yaml | yq --exit-status .$HOSTNAME.ipv4 -r`
 
 ssh:
   ssh root@{{ host }}
 
 test-on-vagrant:
-  ssh-keygen -f /home/shahn/.ssh/known_hosts -R 192.168.50.4
+  ssh-keygen -f ~/.ssh/known_hosts -R 192.168.50.4
   vagrant up
   ssh-keyscan 192.168.50.4 >> ~/.ssh/known_hosts
   HOSTNAME=vagrant ./deploy
@@ -21,9 +21,8 @@ run +args: sync-justfile
 sync-justfile:
   scp remote.justfile root@{{ host }}:justfile
 
-# todo:
-# - figure out password file
-# - figure out wallet creation
+deploy:
+  ./deploy
 
 render-templates:
   mkdir -p tmp
@@ -31,3 +30,21 @@ render-templates:
   ./render-template bitcoind.service > tmp/bitcoind.service
   ./render-template bitcoin.conf > tmp/bitcoin.conf
   ./render-template lnd.conf > tmp/lnd.conf
+
+install-dependencies:
+  pip3 install yq
+
+create-wallet:
+  #!/usr/bin/env bash
+  set -euo pipefail
+
+  cat <<'END'
+  To create a new wallet:
+
+  - SSH into target machine with `just ssh`
+  - Run `just lncli create`
+  - Input new password when prompted
+  - Save seed phrase
+  - Write password to /etc/lnd/wallet-password
+  - Re-run deploy script with `just deploy`
+  END

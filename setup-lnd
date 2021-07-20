@@ -8,7 +8,7 @@
 //! ```
 
 use cradle::*;
-use std::{fs, thread, time::Duration};
+use std::{fs, path::Path, thread, time::Duration};
 use which::which;
 
 const LND_VERSION: &str = "v0.13.0-beta";
@@ -33,6 +33,20 @@ fn main() {
         panic!("version mismatch");
     }
     cmd_unit!(%"lnd --version");
+
+    if !Path::new("/etc/lnd/wallet-password").exists() {
+        eprintln!("Removing `wallet-unlock-password-file` setting from lnd.conf…");
+
+        let conf = fs::read_to_string("/etc/lnd/lnd.conf")
+            .unwrap()
+            .lines()
+            .filter(|line| !line.contains("/etc/lnd/wallet-password"))
+            .collect::<Vec<&str>>()
+            .join("\n");
+
+        fs::write("/etc/lnd/lnd.conf", conf).unwrap();
+    }
+
     cmd_unit!(%"systemctl daemon-reload");
     cmd_unit!(%"systemctl enable lnd");
     cmd_unit!(%"systemctl restart lnd");
@@ -93,9 +107,7 @@ fn setup_wallet() {
         eprintln!("wallet state: {}", &state);
         match state {
             "NON_EXISTING" => {
-                panic!(
-                "Please, create a wallet now, and put the password into /etc/lnd/wallet-password!"
-            );
+                panic!("Please run `just create-wallet`!");
             }
             "LOCKED" => {
                 eprintln!("waiting for wallet to be unlocked...");
