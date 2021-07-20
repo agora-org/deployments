@@ -29,10 +29,10 @@ fn main() {
         Ok(_) => {}
     }
     let StdoutUntrimmed(version) = cmd!(%"lnd --version");
+    eprintln!("{}", version);
     if !version.contains(LND_VERSION) {
         panic!("version mismatch");
     }
-    cmd_unit!(%"lnd --version");
 
     if !Path::new("/etc/lnd/wallet-password").exists() {
         eprintln!("Removing `wallet-unlock-password-file` setting from lnd.conf…");
@@ -118,7 +118,7 @@ fn setup_wallet() {
                 thread::sleep(Duration::from_secs(1));
             }
             "RPC_ACTIVE" => break,
-            _ => todo!("unknown state: {}", state),
+            _ => panic!("Unknown LND state: {}", state),
         }
     }
 }
