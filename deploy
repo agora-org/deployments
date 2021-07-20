@@ -2,8 +2,8 @@
 //! ```cargo
 //! [dependencies]
 //! cradle = "=0.0.12"
-//! serde_yaml = "=0.8.17"
 //! lazy_static = "=1.4.0"
+//! serde_yaml = "=0.8.17"
 //! ```
 use cradle::*;
 use std::{fs, process::Command};
@@ -30,6 +30,11 @@ fn scp(source: &str, destination: &str) {
 
 fn ssh<I: Input, O: Output>(command: I) -> O {
     cmd!(LogCommand, "ssh", format!("root@{}", *HOST), command)
+}
+
+fn copy_config() {
+    let host_config: String = serde_yaml::to_string(&*CONFIG).unwrap();
+    let () = ssh((Stdin(host_config), "cat > ~/config.yaml"));
 }
 
 fn copy_bitcoind_files() {
@@ -73,6 +78,7 @@ fn add_cargo_bin_to_path() {
 fn main() {
     eprintln!("deploying to {}...", *HOSTNAME);
     cmd_unit!(%"just render-templates");
+    copy_config();
     scp("50reboot-on-upgrades", "/etc/apt/apt.conf.d/");
     copy_bitcoind_files();
     copy_lnd_files();
@@ -88,4 +94,5 @@ fn main() {
     if !status.success() {
         panic!("{}", status);
     }
+    eprintln!("successfully deployed to {}...", *HOSTNAME);
 }

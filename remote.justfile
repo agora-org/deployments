@@ -13,6 +13,7 @@ install-base-packages:
     atool \
     build-essential \
     jq \
+    python3-pip \
     tree \
     unattended-upgrades \
     update-notifier-common \
@@ -63,10 +64,15 @@ setup-lnd:
   ./setup-lnd
 
 lncli +command:
-  lncli --network testnet --lnddir=/var/lib/lnd {{ command }}
+  #!/usr/bin/env bash
+  set -euxo pipefail
+
+  NETWORK=`cat config.yaml | yq .network -r`
+  lncli --network $NETWORK --lnddir=/var/lib/lnd {{ command }}
 
 curl-lnd:
   #!/usr/bin/env bash
   set -euo pipefail
+
   MACAROON_HEADER="Grpc-Metadata-macaroon: $(xxd -ps -u -c 1000 /var/lib/lnd/data/chain/bitcoin/testnet/admin.macaroon)"
   curl -X GET --cacert /var/lib/lnd/tls.cert --header "$MACAROON_HEADER" https://localhost:8080/v1/state | jq .

@@ -2,15 +2,27 @@
 //! ```cargo
 //! [dependencies]
 //! cradle = "=0.0.12"
+//! lazy_static = "=1.4.0"
+//! serde_yaml = "=0.8.17"
 //! which = "=4.1.0"
 //! ```
 
 use cradle::*;
+use std::{fs, thread, time::Duration};
 use which::which;
 
 const LND_VERSION: &str = "v0.13.0-beta";
 
+lazy_static::lazy_static! {
+    static ref CONFIG: serde_yaml::Value =
+        serde_yaml::from_str::<serde_yaml::Value>(&fs::read_to_string("config.yaml").unwrap())
+            .unwrap()
+            .clone();
+    static ref NETWORK: String = CONFIG["network"].as_str().unwrap().to_string();
+}
+
 fn main() {
+    install_yq();
     match which("lnd") {
         Err(which::Error::CannotFindBinaryPath) => install_lnd(),
         Err(error) => panic!("{}", error),
@@ -22,10 +34,20 @@ fn main() {
     }
     cmd_unit!(%"lnd --version");
     cmd_unit!(%"systemctl daemon-reload");
-    cmd_unit!(%"bark how to create a wallet?");
     cmd_unit!(%"systemctl enable lnd");
     cmd_unit!(%"systemctl restart lnd");
-    // # ssh root@host 'echo -n foofoofoo > /etc/lnd/wallet-password'
+    setup_wallet();
+}
+
+fn install_yq() {
+    match which("yq") {
+        Err(which::Error::CannotFindBinaryPath) => {
+            cmd_unit!(%"pip3 install yq");
+        }
+        Err(error) => panic!("{}", error),
+        Ok(_) => {}
+    }
+    cmd_unit!(%"yq --version");
 }
 
 fn install_lnd() {
@@ -44,7 +66,47 @@ fn install_lnd() {
         format!("lnd-linux-amd64-{}.tar.gz", LND_VERSION),
         ("-C", "/usr/local/bin/"),
         "--strip-components=1",
-        "lnd-linux-amd64-{{lnd-version}}/lnd",
-        "lnd-linux-amd64-{{lnd-version}}/lncli",
+        format!("lnd-linux-amd64-{}/lnd", LND_VERSION),
+        format!("lnd-linux-amd64-{}/lncli", LND_VERSION),
     );
+}
+
+fn setup_wallet() {
+    loop {
+        let json = loop {
+            let (Status(status), StdoutUntrimmed(stdout), Stderr(stderr)) = cmd!(
+                "lncli",
+                ("--network", &*NETWORK),
+                "--lnddir=/var/lib/lnd",
+                "state"
+            );
+            if status.success() {
+                break stdout;
+            }
+            assert!(stderr.contains("connection refused"));
+            eprint!("{}", stderr);
+            eprintln!("waiting for lnd to be functional...");
+            thread::sleep(Duration::from_secs(1));
+        };
+        let json = serde_yaml::from_str::<serde_yaml::Value>(&json).unwrap();
+        let state = json["state"].as_str().unwrap().clone();
+        eprintln!("wallet state: {}", &state);
+        match state {
+            "NON_EXISTING" => {
+                panic!(
+                "Please, create a wallet now, and put the password into /etc/lnd/wallet-password!"
+            );
+            }
+            "LOCKED" => {
+                eprintln!("waiting for wallet to be unlocked...");
+                thread::sleep(Duration::from_secs(1));
+            }
+            "UNLOCKED" => {
+                eprintln!("waiting for wallet to be active...");
+                thread::sleep(Duration::from_secs(1));
+            }
+            "RPC_ACTIVE" => break,
+            _ => todo!("unknown state: {}", state),
+        }
+    }
 }
