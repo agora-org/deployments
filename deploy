@@ -47,6 +47,8 @@ fn copy_lnd_files() {
     let () = ssh("mkdir -p /etc/lnd");
     let () = ssh("chmod 710 /etc/lnd");
     scp("tmp/lnd.conf", "/etc/lnd/");
+    scp("setup-lnd", "~/");
+    let () = ssh("chmod +x setup-lnd");
 }
 
 fn install_just() {

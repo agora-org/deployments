@@ -1,10 +1,9 @@
-lnd-version := "v0.13.0-beta"
 production := if `hostname` == "athens" { "true" } else { "false" }
 
 tail-logs:
   journalctl -f -u bitcoind -u lnd
 
-setup: install-base-packages install-rust setup-volume setup-bitcoind # setup-lnd
+setup: install-base-packages install-rust setup-volume setup-bitcoind setup-lnd
 
 install-base-packages:
   #!/usr/bin/env bash
@@ -61,21 +60,7 @@ setup-bitcoind:
   systemctl restart bitcoind
 
 setup-lnd:
-  #!/usr/bin/env bash
-  set -euxo pipefail
-  if ! lnd --version | grep {{lnd-version}}; then
-    wget -O lnd-linux-amd64-{{lnd-version}}.tar.gz \
-      'https://github.com/lightningnetwork/lnd/releases/download/{{lnd-version}}/lnd-linux-amd64-{{lnd-version}}.tar.gz'
-    tar -xzvf lnd-linux-amd64-{{lnd-version}}.tar.gz -C /usr/local/bin/ --strip-components=1 \
-      lnd-linux-amd64-{{lnd-version}}/lnd \
-      lnd-linux-amd64-{{lnd-version}}/lncli
-  fi
-  lnd --version
-  systemctl daemon-reload
-  systemctl enable lnd
-  systemctl restart lnd
-  bark create wallet
-  # ssh root@host 'echo -n foofoofoo > /etc/lnd/wallet-password'
+  ./setup-lnd
 
 lncli +command:
   lncli --network testnet --lnddir=/var/lib/lnd {{ command }}

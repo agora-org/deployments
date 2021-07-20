@@ -1,0 +1,50 @@
+#!/usr/bin/env rust-script
+//! ```cargo
+//! [dependencies]
+//! cradle = "=0.0.12"
+//! which = "=4.1.0"
+//! ```
+
+use cradle::*;
+use which::which;
+
+const LND_VERSION: &str = "v0.13.0-beta";
+
+fn main() {
+    match which("lnd") {
+        Err(which::Error::CannotFindBinaryPath) => install_lnd(),
+        Err(error) => panic!("{}", error),
+        Ok(_) => {}
+    }
+    let StdoutUntrimmed(version) = cmd!(%"lnd --version");
+    if !version.contains(LND_VERSION) {
+        panic!("version mismatch");
+    }
+    cmd_unit!(%"lnd --version");
+    cmd_unit!(%"systemctl daemon-reload");
+    cmd_unit!(%"bark how to create a wallet?");
+    cmd_unit!(%"systemctl enable lnd");
+    cmd_unit!(%"systemctl restart lnd");
+    // # ssh root@host 'echo -n foofoofoo > /etc/lnd/wallet-password'
+}
+
+fn install_lnd() {
+    cmd_unit!(
+        "wget",
+        ("-O", format!("lnd-linux-amd64-{}.tar.gz", LND_VERSION)),
+        format!(
+            "https://github.com/lightningnetwork/lnd/releases/download/{}/lnd-linux-amd64-{}.tar.gz",
+            LND_VERSION,
+            LND_VERSION
+        ),
+    );
+    cmd_unit!(
+        "tar",
+        "-xzvf",
+        format!("lnd-linux-amd64-{}.tar.gz", LND_VERSION),
+        ("-C", "/usr/local/bin/"),
+        "--strip-components=1",
+        "lnd-linux-amd64-{{lnd-version}}/lnd",
+        "lnd-linux-amd64-{{lnd-version}}/lncli",
+    );
+}
