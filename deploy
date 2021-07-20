@@ -9,7 +9,7 @@ use cradle::*;
 use std::{fs, process::Command};
 
 lazy_static::lazy_static! {
-  static ref HOSTNAME: String = std::env::var("HOSTNAME").unwrap();
+  static ref HOSTNAME: String = std::env::var("HOSTNAME").expect("HOSTNAME env var not set");
   static ref CONFIG: serde_yaml::Value = {
     serde_yaml::from_str::<serde_yaml::Value>(&fs::read_to_string("config.yaml").unwrap()).unwrap()
         [&*HOSTNAME]
@@ -69,6 +69,7 @@ fn add_cargo_bin_to_path() {
 }
 
 fn main() {
+    eprintln!("deploying to {}...", *HOSTNAME);
     cmd_unit!(%"just render-templates");
     scp("50reboot-on-upgrades", "/etc/apt/apt.conf.d/");
     copy_bitcoind_files();
