@@ -38,20 +38,30 @@ setup-from-local recipe="setup": render-templates
   //! ```cargo
   //! [dependencies]
   //! cradle = "=0.0.12"
+  //! serde_yaml = "=0.8.17"
+  //! lazy_static = "=1.4.0"
   //! ```
   use cradle::*;
-  use std::process::Command;
+  use std::{fs, process::Command};
 
-  const HOSTNAME: &str = "{{ env_var("HOSTNAME") }}";
-  const HOST: &str = "{{ host }}";
-  const RECIPE: &str = "{{ recipe }}";
+  lazy_static::lazy_static! {
+    static ref HOSTNAME: String = std::env::var("HOSTNAME").unwrap();
+    static ref CONFIG: serde_yaml::Value = {
+      serde_yaml::from_str::<serde_yaml::Value>(&fs::read_to_string("config.yaml").unwrap()).unwrap()
+          [&*HOSTNAME]
+          .clone()
+    };
+    static ref HOST: &'static str = CONFIG["ipv4"].as_str().unwrap();
+    static ref RECIPE: &'static str = "{{ recipe }}";
+  }
+
 
   fn scp(source: &str, destination: &str) {
-    cmd_unit!(LogCommand, "scp", source, format!("root@{}:{}", HOST, destination));
+    cmd_unit!(LogCommand, "scp", source, format!("root@{}:{}", *HOST, destination));
   }
 
   fn ssh<I: Input, O: Output>(command: I) -> O {
-    cmd!(LogCommand, "ssh", format!("root@{}", HOST), command)
+    cmd!(LogCommand, "ssh", format!("root@{}", *HOST), command)
   }
 
   fn copy_bitcoind_files() {
@@ -59,7 +69,7 @@ setup-from-local recipe="setup": render-templates
     let () = ssh("mkdir -p /etc/bitcoin");
     let () = ssh("chmod 710 /etc/bitcoin");
     scp("tmp/bitcoin.conf", "/etc/bitcoin/");
-    if HOSTNAME == "athens" {
+    if &*HOSTNAME == "athens" {
       scp("mnt-athens.mount", "/etc/systemd/system/");
     }
   }
@@ -95,11 +105,11 @@ setup-from-local recipe="setup": render-templates
     copy_lnd_files();
     install_just();
     add_cargo_bin_to_path();
-    let () = ssh(("hostnamectl", "set-hostname", HOSTNAME));
+    let () = ssh(("hostnamectl", "set-hostname", &*HOSTNAME));
     let status = Command::new("just")
-      .env("HOSTNAME", HOSTNAME)
+      .env("HOSTNAME", &*HOSTNAME)
       .arg("run")
-      .arg(RECIPE)
+      .arg(*RECIPE)
       .status()
       .unwrap();
     if !status.success() {
