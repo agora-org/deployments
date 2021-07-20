@@ -1,0 +1,87 @@
+#!/usr/bin/env rust-script
+//! ```cargo
+//! [dependencies]
+//! cradle = "=0.0.12"
+//! serde_yaml = "=0.8.17"
+//! lazy_static = "=1.4.0"
+//! ```
+use cradle::*;
+use std::{fs, process::Command};
+
+lazy_static::lazy_static! {
+  static ref HOSTNAME: String = std::env::var("HOSTNAME").unwrap();
+  static ref CONFIG: serde_yaml::Value = {
+    serde_yaml::from_str::<serde_yaml::Value>(&fs::read_to_string("config.yaml").unwrap()).unwrap()
+        [&*HOSTNAME]
+        .clone()
+  };
+  static ref HOST: &'static str = CONFIG["ipv4"].as_str().unwrap();
+  static ref RECIPE: String = std::env::args().skip(1).next().unwrap();
+}
+
+fn scp(source: &str, destination: &str) {
+    cmd_unit!(
+        LogCommand,
+        "scp",
+        source,
+        format!("root@{}:{}", *HOST, destination)
+    );
+}
+
+fn ssh<I: Input, O: Output>(command: I) -> O {
+    cmd!(LogCommand, "ssh", format!("root@{}", *HOST), command)
+}
+
+fn copy_bitcoind_files() {
+    scp("tmp/bitcoind.service", "/etc/systemd/system/");
+    let () = ssh("mkdir -p /etc/bitcoin");
+    let () = ssh("chmod 710 /etc/bitcoin");
+    scp("tmp/bitcoin.conf", "/etc/bitcoin/");
+    if &*HOSTNAME == "athens" {
+        scp("mnt-athens.mount", "/etc/systemd/system/");
+    }
+}
+
+fn copy_lnd_files() {
+    scp("lnd.service", "/etc/systemd/system/");
+    let () = ssh("mkdir -p /etc/lnd");
+    let () = ssh("chmod 710 /etc/lnd");
+    scp("tmp/lnd.conf", "/etc/lnd/");
+}
+
+fn install_just() {
+    let Status(status) = ssh("just --version");
+    if !status.success() {
+        let mut command =
+            "curl --proto =https --tlsv1.2 -sSf https://just.systems/install.sh".to_string();
+        command.push_str("| bash -s -- --to /usr/local/bin");
+        let () = ssh(&command);
+    }
+}
+
+fn add_cargo_bin_to_path() {
+    let line = "export PATH=\"$HOME/.cargo/bin:$PATH\"\n";
+    let StdoutUntrimmed(mut bashrc) = ssh("cat ~/.bashrc");
+    if !bashrc.starts_with(line) {
+        bashrc.insert_str(0, line);
+        let () = ssh((Stdin(bashrc), "cat > ~/.bashrc"));
+    }
+}
+
+fn main() {
+    scp("50reboot-on-upgrades", "/etc/apt/apt.conf.d/");
+    copy_bitcoind_files();
+    copy_lnd_files();
+    install_just();
+    add_cargo_bin_to_path();
+    let () = ssh(("hostnamectl", "set-hostname", &*HOSTNAME));
+    let status = Command::new("just")
+        .env("HOSTNAME", &*HOSTNAME)
+        .arg("run")
+        .arg(&*RECIPE)
+        .status()
+        .unwrap();
+    if !status.success() {
+        panic!("{}", status);
+    }
+}
