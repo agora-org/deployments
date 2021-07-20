@@ -1,32 +1,20 @@
-athens := "66.175.216.63"
-kos := "66.175.211.57"
-vagrant := "192.168.50.4"
-export TARGET := "vagrant"
-host := if TARGET == "athens" {
-  athens
-} else {
-  if TARGET == "kos" {
-    kos
-  } else {
-    vagrant
-  }
-}
-hostname := TARGET
+host := `cat config.yaml | yq .$HOSTNAME.ipv4 -r`
+hostname := env_var("HOSTNAME")
 
 ssh:
   ssh root@{{ host }}
 
 test-on-vagrant:
-  ssh-keygen -f "/home/shahn/.ssh/known_hosts" -R "192.168.50.4"
+  ssh-keygen -f /home/shahn/.ssh/known_hosts -R 192.168.50.4
   vagrant up
   ssh-keyscan 192.168.50.4 >> ~/.ssh/known_hosts
-  just TARGET=vagrant setup-from-local
+  HOSTNAME=vagrant just setup-from-local
   ssh root@192.168.50.4 just tail-logs
 
 test-render-templates:
-  just TARGET=vagrant render-templates
-  just TARGET=kos render-templates
-  just TARGET=athens render-templates
+  HOSTNAME=vagrant just render-templates
+  HOSTNAME=kos just render-templates
+  HOSTNAME=athens just render-templates
 
 run +args: sync-justfile
   ssh root@{{ host }} 'just {{ args }}'
@@ -52,10 +40,10 @@ setup-from-local recipe="setup": render-templates
   //! cradle = "=0.0.12"
   //! ```
   use cradle::*;
+  use std::process::Command;
 
-  const TARGET: &str = "{{ TARGET }}";
+  const HOSTNAME: &str = "{{ env_var("HOSTNAME") }}";
   const HOST: &str = "{{ host }}";
-  const HOSTNAME: &str = "{{ hostname }}";
   const RECIPE: &str = "{{ recipe }}";
 
   fn scp(source: &str, destination: &str) {
@@ -71,7 +59,7 @@ setup-from-local recipe="setup": render-templates
     let () = ssh("mkdir -p /etc/bitcoin");
     let () = ssh("chmod 710 /etc/bitcoin");
     scp("tmp/bitcoin.conf", "/etc/bitcoin/");
-    if TARGET == "athens" {
+    if HOSTNAME == "athens" {
       scp("mnt-athens.mount", "/etc/systemd/system/");
     }
   }
@@ -108,5 +96,13 @@ setup-from-local recipe="setup": render-templates
     install_just();
     add_cargo_bin_to_path();
     let () = ssh(("hostnamectl", "set-hostname", HOSTNAME));
-    cmd_unit!("just", format!("TARGET={}", TARGET), "run", RECIPE);
+    let status = Command::new("just")
+      .env("HOSTNAME", HOSTNAME)
+      .arg("run")
+      .arg(RECIPE)
+      .status()
+      .unwrap();
+    if !status.success() {
+      panic!("{}", status);
+    }
   }
