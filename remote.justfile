@@ -21,6 +21,7 @@ install-base-packages:
   if ! grep _just /root/.bashrc; then
     just --completions bash >> /root/.bashrc
   fi
+  touch ~/.hushlogin
 
 install-rust:
   rustup --version || \
