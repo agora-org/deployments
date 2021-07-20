@@ -8,7 +8,7 @@ test-on-vagrant:
   ssh-keygen -f /home/shahn/.ssh/known_hosts -R 192.168.50.4
   vagrant up
   ssh-keyscan 192.168.50.4 >> ~/.ssh/known_hosts
-  HOSTNAME=vagrant just setup-from-local
+  HOSTNAME=vagrant ./setup-from-local
   ssh root@192.168.50.4 just tail-logs
 
 test-render-templates:
@@ -32,6 +32,3 @@ render-templates:
   ./render-template bitcoind.service > tmp/bitcoind.service
   ./render-template bitcoin.conf > tmp/bitcoin.conf
   ./render-template lnd.conf > tmp/lnd.conf
-
-setup-from-local recipe="setup": render-templates
-  ./setup-from-local {{ recipe }}

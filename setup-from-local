@@ -16,7 +16,7 @@ lazy_static::lazy_static! {
         .clone()
   };
   static ref HOST: &'static str = CONFIG["ipv4"].as_str().unwrap();
-  static ref RECIPE: String = std::env::args().skip(1).next().unwrap();
+  static ref RECIPE: String = std::env::args().skip(1).next().unwrap_or("setup".to_string());
 }
 
 fn scp(source: &str, destination: &str) {
@@ -69,6 +69,7 @@ fn add_cargo_bin_to_path() {
 }
 
 fn main() {
+    cmd_unit!(%"just render-templates");
     scp("50reboot-on-upgrades", "/etc/apt/apt.conf.d/");
     copy_bitcoind_files();
     copy_lnd_files();

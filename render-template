@@ -1,4 +1,4 @@
-#!/usr/bin/env -S rust-script --cargo-output --
+#!/usr/bin/env rust-script
 //! ```cargo
 //! [dependencies]
 //! structopt = "=0.3.22"
