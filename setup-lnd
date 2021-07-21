@@ -30,9 +30,11 @@ fn is_in_path(binary: &str) -> bool {
 }
 
 fn main() {
+    env_clean();
     install_yq();
     install_lnd();
     install_lntop();
+    install_agora();
 
     if !Path::new("/etc/lnd/wallet-password").exists() {
         eprintln!("Removing `wallet-unlock-password-file` setting from lnd.conf…");
@@ -51,6 +53,15 @@ fn main() {
     cmd_unit!(%"systemctl enable lnd");
     cmd_unit!(%"systemctl restart lnd");
     setup_wallet();
+}
+
+fn env_clean() {
+    for (key, _value) in std::env::vars_os() {
+        let key_string = key.to_string_lossy();
+        if key_string.starts_with("CARGO") || key_string.starts_with("RUST") {
+            std::env::remove_var(key);
+        }
+    }
 }
 
 fn install_yq() {
@@ -101,6 +112,14 @@ fn install_lntop() {
         cmd_unit!(%"cp go/bin/lntop /usr/local/bin");
     }
     cmd_unit!(%"lntop --version");
+}
+
+fn install_agora() {
+    if !Path::new("agora").is_dir() {
+        cmd_unit!(%"git clone https://github.com/agora-org/agora.git");
+    }
+    cmd_unit!(LogCommand, CurrentDir("agora"), %"git pull --ff-only");
+    cmd_unit!(LogCommand, CurrentDir("agora"), %"cargo install --path . --force");
 }
 
 fn setup_wallet() {

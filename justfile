@@ -18,7 +18,7 @@ test-render-templates:
   HOSTNAME=athens just render-templates
 
 run +args: sync-justfile
-  ssh root@{{ ip }} just "$@"
+  ssh -t root@{{ ip }} just "$@"
 
 lncli +args: (run "lncli" args)
 
