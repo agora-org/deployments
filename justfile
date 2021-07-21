@@ -1,7 +1,9 @@
+set positional-arguments
+
 ip := `cat config.yaml | yq --exit-status .$HOSTNAME.ipv4 -r`
 
-ssh: sync-justfile
-  ssh root@{{ ip }}
+ssh *args: sync-justfile
+  ssh root@{{ ip }} "$@"
 
 test-on-vagrant:
   ssh-keygen -f ~/.ssh/known_hosts -R 192.168.50.4
@@ -16,9 +18,12 @@ test-render-templates:
   HOSTNAME=athens just render-templates
 
 run +args: sync-justfile
-  ssh root@{{ ip }} 'just {{ args }}'
+  ssh root@{{ ip }} just "$@"
 
 lncli +args: (run "lncli" args)
+
+lntop *args:
+  ssh -t root@{{ ip }} lntop "$@"
 
 sync-justfile:
   scp remote.justfile root@{{ ip }}:justfile
@@ -32,6 +37,7 @@ render-templates:
   ./render-template bitcoind.service > tmp/bitcoind.service
   ./render-template bitcoin.conf > tmp/bitcoin.conf
   ./render-template lnd.conf > tmp/lnd.conf
+  ./render-template lntop.toml > tmp/lntop.toml
 
 install-dependencies:
   pip3 install yq

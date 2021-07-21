@@ -31,17 +31,8 @@ fn is_in_path(binary: &str) -> bool {
 
 fn main() {
     install_yq();
-    if !is_in_path("lnd") {
-        install_lnd();
-    }
-    let StdoutUntrimmed(version) = cmd!(%"lnd --version");
-    eprintln!("{}", version);
-    if !version.contains(LND_VERSION) {
-        panic!(
-            "LND version mismatch: expected: {} actual: {}",
-            LND_VERSION, version
-        );
-    }
+    install_lnd();
+    install_lntop();
 
     if !Path::new("/etc/lnd/wallet-password").exists() {
         eprintln!("Removing `wallet-unlock-password-file` setting from lnd.conf…");
@@ -70,24 +61,45 @@ fn install_yq() {
 }
 
 fn install_lnd() {
-    cmd_unit!(
-        "wget",
-        ("-O", format!("lnd-linux-amd64-{}.tar.gz", LND_VERSION)),
-        format!(
-            "https://github.com/lightningnetwork/lnd/releases/download/{}/lnd-linux-amd64-{}.tar.gz",
-            LND_VERSION,
-            LND_VERSION
-        ),
-    );
-    cmd_unit!(
-        "tar",
-        "-xzvf",
-        format!("lnd-linux-amd64-{}.tar.gz", LND_VERSION),
-        ("-C", "/usr/local/bin/"),
-        "--strip-components=1",
-        format!("lnd-linux-amd64-{}/lnd", LND_VERSION),
-        format!("lnd-linux-amd64-{}/lncli", LND_VERSION),
-    );
+    if !is_in_path("lnd") {
+        cmd_unit!(
+            "wget",
+            ("-O", format!("lnd-linux-amd64-{}.tar.gz", LND_VERSION)),
+            format!(
+                "https://github.com/lightningnetwork/lnd/releases/download/{}/lnd-linux-amd64-{}.tar.gz",
+                LND_VERSION,
+                LND_VERSION
+            ),
+        );
+        cmd_unit!(
+            "tar",
+            "-xzvf",
+            format!("lnd-linux-amd64-{}.tar.gz", LND_VERSION),
+            ("-C", "/usr/local/bin/"),
+            "--strip-components=1",
+            format!("lnd-linux-amd64-{}/lnd", LND_VERSION),
+            format!("lnd-linux-amd64-{}/lncli", LND_VERSION),
+        );
+    }
+
+    let StdoutUntrimmed(version) = cmd!(%"lnd --version");
+    eprintln!("{}", version);
+    if !version.contains(LND_VERSION) {
+        panic!(
+            "LND version mismatch: expected: {} actual: {}",
+            LND_VERSION, version
+        );
+    }
+}
+
+fn install_lntop() {
+    if !is_in_path("lntop") {
+        cmd_unit!(%"rm -rf lntop");
+        cmd_unit!(%"git clone https://github.com/edouardparis/lntop.git");
+        cmd_unit!(CurrentDir("lntop"), %"go install ./...");
+        cmd_unit!(%"cp go/bin/lntop /usr/local/bin");
+    }
+    cmd_unit!(%"lntop --version");
 }
 
 fn setup_wallet() {
@@ -114,12 +126,8 @@ fn setup_wallet() {
             "NON_EXISTING" => {
                 panic!("Please run `just create-wallet`!");
             }
-            "LOCKED" => {
-                eprintln!("waiting for wallet to be unlocked...");
-                thread::sleep(Duration::from_secs(1));
-            }
-            "UNLOCKED" => {
-                eprintln!("waiting for wallet to be active...");
+            "LOCKED" | "UNLOCKED" | "WAITING_TO_START" => {
+                eprintln!("waiting for wallet to activate...");
                 thread::sleep(Duration::from_secs(1));
             }
             "RPC_ACTIVE" => break,

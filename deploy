@@ -57,6 +57,9 @@ fn copy_lnd_files() {
     scp("tmp/lnd.conf", "/etc/lnd/");
     scp("setup-lnd", "~/");
     ssh_unit("chmod +x setup-lnd");
+
+    ssh_unit("mkdir -p .lntop");
+    scp("tmp/lntop.toml", "~/.lntop/config.toml");
 }
 
 fn install_just() {
