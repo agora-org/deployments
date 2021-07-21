@@ -6,7 +6,7 @@
 //! serde_yaml = "=0.8.17"
 //! ```
 use cradle::*;
-use std::{fs, process::Command};
+use std::fs;
 
 lazy_static::lazy_static! {
   static ref HOSTNAME: String = std::env::var("HOSTNAME").expect("HOSTNAME env var not set");
