@@ -1,88 +1,52 @@
-run +target: sync-justfile
-  ssh root@66.175.211.57 'just {{ target }}'
+host := `cat config.yaml | yq --exit-status .$HOSTNAME.ipv4 -r`
 
 ssh:
-  ssh root@66.175.211.57
+  ssh root@{{ host }}
+
+test-on-vagrant:
+  ssh-keygen -f ~/.ssh/known_hosts -R 192.168.50.4
+  vagrant up
+  ssh-keyscan 192.168.50.4 >> ~/.ssh/known_hosts
+  HOSTNAME=vagrant ./deploy
+  ssh root@192.168.50.4 just tail-logs
+
+test-render-templates:
+  HOSTNAME=vagrant just render-templates
+  HOSTNAME=kos just render-templates
+  HOSTNAME=athens just render-templates
+
+run +args: sync-justfile
+  ssh root@{{ host }} 'just {{ args }}'
+
+lncli +args: (run "lncli" args)
 
 sync-justfile:
-  scp justfile root@66.175.211.57:
+  scp remote.justfile root@{{ host }}:justfile
 
-setup-from-local target="setup":
-  scp 50reboot-on-upgrades root@66.175.211.57:/etc/apt/apt.conf.d/
+deploy:
+  ./deploy
 
-  scp bitcoind.service root@66.175.211.57:/etc/systemd/system/
-  ssh root@66.175.211.57 'mkdir -p /etc/bitcoin'
-  ssh root@66.175.211.57 'chmod 710 /etc/bitcoin'
-  scp bitcoin.conf root@66.175.211.57:/etc/bitcoin/
+render-templates:
+  mkdir -p tmp
+  rm -f tmp/*
+  ./render-template bitcoind.service > tmp/bitcoind.service
+  ./render-template bitcoin.conf > tmp/bitcoin.conf
+  ./render-template lnd.conf > tmp/lnd.conf
 
-  scp lnd.service root@66.175.211.57:/etc/systemd/system/
-  ssh root@66.175.211.57 'mkdir -p /etc/lnd'
-  ssh root@66.175.211.57 'chmod 710 /etc/lnd'
-  ssh root@66.175.211.57 'echo -n foofoofoo > /etc/lnd/wallet-password'
-  scp lnd.conf root@66.175.211.57:/etc/lnd/
-  just run {{ target }}
+install-dependencies:
+  pip3 install yq
 
-setup: root-check install-base-packages setup-bitcoind setup-lnd
-
-root-check:
-  #!/usr/bin/env bash
-  set -euxo pipefail
-  if ! [[ $(whoami) == "root" ]]; then
-    echo you are not root!
-    false
-  fi
-
-install-base-packages:
-  #!/usr/bin/env bash
-  set -euxo pipefail
-  apt-get install --yes \
-    atool \
-    jq \
-    tree \
-    unattended-upgrades \
-    update-notifier-common \
-    vim
-  if ! grep _just /root/.bashrc; then
-    just --completions bash >> /root/.bashrc
-  fi
-
-setup-bitcoind:
-  #!/usr/bin/env bash
-  set -euxo pipefail
-  if ! which bitcoind; then
-    wget -O bitcoin.tar.gz 'https://bitcoin.org/bin/bitcoin-core-0.21.1/bitcoin-0.21.1-x86_64-linux-gnu.tar.gz'
-    echo '366eb44a7a0aa5bd342deea215ec19a184a11f2ca22220304ebb20b9c8917e2b bitcoin.tar.gz' | sha256sum -c -
-    tar -xzvf bitcoin.tar.gz -C /usr/local/bin --strip-components=2 "bitcoin-0.21.1/bin/bitcoin-cli" "bitcoin-0.21.1/bin/bitcoind"
-  fi
-  bitcoind --version
-  id --user bitcoin &>/dev/null || useradd --system bitcoin
-  systemctl daemon-reload
-  systemctl restart bitcoind
-
-lnd-version := "v0.13.0-beta.rc5"
-
-setup-lnd: root-check
-  #!/usr/bin/env bash
-  set -euxo pipefail
-  if ! lnd --version | grep {{lnd-version}}; then
-    wget -O lnd-linux-amd64-{{lnd-version}}.tar.gz \
-      'https://github.com/lightningnetwork/lnd/releases/download/{{lnd-version}}/lnd-linux-amd64-{{lnd-version}}.tar.gz'
-    tar -xzvf lnd-linux-amd64-{{lnd-version}}.tar.gz -C /usr/local/bin/ --strip-components=1 \
-      lnd-linux-amd64-{{lnd-version}}/lnd \
-      lnd-linux-amd64-{{lnd-version}}/lncli
-  fi
-  lnd --version
-  systemctl daemon-reload
-  systemctl restart lnd
-
-lncli +command: root-check
-  lncli --network testnet --lnddir=/var/lib/lnd {{ command }}
-
-tail-logs: root-check
-  journalctl -f -u bitcoind -u lnd
-
-curl-lnd: root-check
+create-wallet:
   #!/usr/bin/env bash
   set -euo pipefail
-  MACAROON_HEADER="Grpc-Metadata-macaroon: $(xxd -ps -u -c 1000 /var/lib/lnd/data/chain/bitcoin/testnet/admin.macaroon)"
-  curl -X GET --cacert /var/lib/lnd/tls.cert --header "$MACAROON_HEADER" https://localhost:8080/v1/state | jq .
+
+  cat <<'END'
+  To create a new wallet:
+
+  - SSH into target machine with `just ssh`
+  - Run `just lncli create`
+  - Input new password when prompted
+  - Save seed phrase
+  - Write password to /etc/lnd/wallet-password
+  - Re-run deploy script with `just deploy`
+  END

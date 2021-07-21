@@ -1,6 +1,8 @@
 [Unit]
 Description=lnd
 After=network.target
+StartLimitIntervalSec=10m
+StartLimitBurst=120
 
 [Service]
 ExecStart=/usr/local/bin/lnd \
@@ -16,7 +18,8 @@ ExecStartPre=/bin/chgrp bitcoin /etc/lnd
 
 Type=simple
 Restart=on-failure
-TimeoutStopSec=600
+TimeoutStopSec=10m
+RestartSec=5s
 
 # Directory creation and permissions
 ####################################

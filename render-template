@@ -1,0 +1,32 @@
+#!/usr/bin/env rust-script
+//! ```cargo
+//! [dependencies]
+//! structopt = "=0.3.22"
+//! tera = "=1.12.1"
+//! serde_yaml = "=0.8.17"
+//! ```
+
+use std::{fs, path::PathBuf};
+use structopt::StructOpt;
+use tera::{Context, Tera};
+
+#[derive(StructOpt, Debug)]
+struct Args {
+    template: PathBuf,
+}
+
+fn read_config(hostname: &str) -> serde_yaml::Value {
+    serde_yaml::from_str::<serde_yaml::Value>(&fs::read_to_string("config.yaml").unwrap()).unwrap()
+        [hostname]
+        .clone()
+}
+
+fn main() {
+    let args = Args::from_args();
+    let hostname = std::env::var("HOSTNAME").unwrap();
+    let config = read_config(&hostname);
+    let context = Context::from_serialize(&config).unwrap();
+    let template = std::fs::read_to_string(args.template).unwrap();
+    let result = Tera::one_off(&template, &context, false).unwrap();
+    print!("{}", result);
+}

@@ -1,0 +1,11 @@
+[Unit]
+Description=athens
+
+[Mount]
+What=/dev/disk/by-id/scsi-0Linode_Volume_athens
+Where=/mnt/athens
+Type=ext4
+Options=defaults,noatime
+
+[Install]
+WantedBy=multi-user.target
