@@ -20,6 +20,9 @@ run +args: sync-justfile
 
 lncli +args: (run "lncli" args)
 
+lntop *args:
+  ssh -t root@{{ ip }} lntop {{ args }}
+
 sync-justfile:
   scp remote.justfile root@{{ ip }}:justfile
 
@@ -32,6 +35,7 @@ render-templates:
   ./render-template bitcoind.service > tmp/bitcoind.service
   ./render-template bitcoin.conf > tmp/bitcoin.conf
   ./render-template lnd.conf > tmp/lnd.conf
+  ./render-template lntop.toml > tmp/lntop.toml
 
 install-dependencies:
   pip3 install yq

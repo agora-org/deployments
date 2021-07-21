@@ -10,6 +10,7 @@ install-base-packages:
   apt-get install --yes \
     atool \
     build-essential \
+    golang \
     jq \
     python3-pip \
     tree \
