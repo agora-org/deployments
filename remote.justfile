@@ -1,5 +1,3 @@
-production := if `hostname` == "athens" { "true" } else { "false" }
-
 tail-logs:
   journalctl -f -u bitcoind -u lnd
 
@@ -33,7 +31,7 @@ setup-volume:
   #!/usr/bin/env bash
   set -euxo pipefail
 
-  if [[ {{ production }} != true ]]; then
+  if [[ `hostname` != athens ]]; then
     exit
   fi
 
@@ -53,7 +51,8 @@ setup-bitcoind:
   fi
   bitcoind --version
   id --user bitcoin &>/dev/null || useradd --system bitcoin
-  if [[ {{ production }} == true ]]; then
+  if [[ `hostname` == athens ]]; then
+    systemctl start mnt-athens.mount
     mkdir -p /mnt/athens/blocks
     chown bitcoin:bitcoin /mnt/athens/blocks
   fi
@@ -68,12 +67,5 @@ lncli +command:
   #!/usr/bin/env bash
   set -euxo pipefail
 
-  NETWORK=`cat config.yaml | yq .network -r`
+  NETWORK=`cat config.yaml | yq --exit-status .network -r`
   lncli --network $NETWORK --lnddir=/var/lib/lnd {{ command }}
-
-curl-lnd:
-  #!/usr/bin/env bash
-  set -euo pipefail
-
-  MACAROON_HEADER="Grpc-Metadata-macaroon: $(xxd -ps -u -c 1000 /var/lib/lnd/data/chain/bitcoin/testnet/admin.macaroon)"
-  curl -X GET --cacert /var/lib/lnd/tls.cert --header "$MACAROON_HEADER" https://localhost:8080/v1/state | jq .

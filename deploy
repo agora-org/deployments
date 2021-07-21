@@ -6,7 +6,7 @@
 //! serde_yaml = "=0.8.17"
 //! ```
 use cradle::*;
-use std::{fs, process::Command};
+use std::fs;
 
 lazy_static::lazy_static! {
   static ref HOSTNAME: String = std::env::var("HOSTNAME").expect("HOSTNAME env var not set");
@@ -15,8 +15,7 @@ lazy_static::lazy_static! {
         [&*HOSTNAME]
         .clone()
   };
-  static ref HOST: &'static str = CONFIG["ipv4"].as_str().unwrap();
-  static ref RECIPE: String = std::env::args().skip(1).next().unwrap_or("setup".to_string());
+  static ref IP: &'static str = CONFIG["ipv4"].as_str().unwrap();
 }
 
 fn scp(source: &str, destination: &str) {
@@ -24,23 +23,27 @@ fn scp(source: &str, destination: &str) {
         LogCommand,
         "scp",
         source,
-        format!("root@{}:{}", *HOST, destination)
+        format!("root@{}:{}", *IP, destination)
     );
 }
 
-fn ssh<I: Input, O: Output>(command: I) -> O {
-    cmd!(LogCommand, "ssh", format!("root@{}", *HOST), command)
+fn ssh<I: Input, O: Output>(input: I) -> O {
+    cmd!(LogCommand, "ssh", format!("root@{}", *IP), input)
+}
+
+fn ssh_unit<I: Input>(input: I) {
+    ssh(input)
 }
 
 fn copy_config() {
     let host_config: String = serde_yaml::to_string(&*CONFIG).unwrap();
-    let () = ssh((Stdin(host_config), "cat > ~/config.yaml"));
+    ssh_unit((Stdin(host_config), "cat > ~/config.yaml"));
 }
 
 fn copy_bitcoind_files() {
     scp("tmp/bitcoind.service", "/etc/systemd/system/");
-    let () = ssh("mkdir -p /etc/bitcoin");
-    let () = ssh("chmod 710 /etc/bitcoin");
+    ssh_unit("mkdir -p /etc/bitcoin");
+    ssh_unit("chmod 710 /etc/bitcoin");
     scp("tmp/bitcoin.conf", "/etc/bitcoin/");
     if &*HOSTNAME == "athens" {
         scp("mnt-athens.mount", "/etc/systemd/system/");
@@ -49,20 +52,20 @@ fn copy_bitcoind_files() {
 
 fn copy_lnd_files() {
     scp("lnd.service", "/etc/systemd/system/");
-    let () = ssh("mkdir -p /etc/lnd");
-    let () = ssh("chmod 710 /etc/lnd");
+    ssh_unit("mkdir -p /etc/lnd");
+    ssh_unit("chmod 710 /etc/lnd");
     scp("tmp/lnd.conf", "/etc/lnd/");
     scp("setup-lnd", "~/");
-    let () = ssh("chmod +x setup-lnd");
+    ssh_unit("chmod +x setup-lnd");
 }
 
 fn install_just() {
     let Status(status) = ssh("just --version");
     if !status.success() {
-        let mut command =
-            "curl --proto =https --tlsv1.2 -sSf https://just.systems/install.sh".to_string();
-        command.push_str("| bash -s -- --to /usr/local/bin");
-        let () = ssh(&command);
+        ssh_unit(
+            "curl --proto =https --tlsv1.2 -sSf https://just.systems/install.sh \
+            | bash -s -- --to /usr/local/bin",
+        );
     }
 }
 
@@ -71,7 +74,7 @@ fn add_cargo_bin_to_path() {
     let StdoutUntrimmed(mut bashrc) = ssh("cat ~/.bashrc");
     if !bashrc.starts_with(line) {
         bashrc.insert_str(0, line);
-        let () = ssh((Stdin(bashrc), "cat > ~/.bashrc"));
+        ssh_unit((Stdin(bashrc), "cat > ~/.bashrc"));
     }
 }
 
@@ -84,15 +87,7 @@ fn main() {
     copy_lnd_files();
     install_just();
     add_cargo_bin_to_path();
-    let () = ssh(("hostnamectl", "set-hostname", &*HOSTNAME));
-    let status = Command::new("just")
-        .env("HOSTNAME", &*HOSTNAME)
-        .arg("run")
-        .arg(&*RECIPE)
-        .status()
-        .unwrap();
-    if !status.success() {
-        panic!("{}", status);
-    }
+    ssh_unit(("hostnamectl", "set-hostname", &*HOSTNAME));
+    cmd_unit!(%"just run setup");
     eprintln!("successfully deployed to {}...", *HOSTNAME);
 }
