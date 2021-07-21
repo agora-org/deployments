@@ -21,17 +21,26 @@ lazy_static::lazy_static! {
     static ref NETWORK: String = CONFIG["network"].as_str().unwrap().to_string();
 }
 
+fn is_in_path(binary: &str) -> bool {
+    match which(binary) {
+        Err(which::Error::CannotFindBinaryPath) => false,
+        Err(error) => panic!("{}", error),
+        Ok(_) => true,
+    }
+}
+
 fn main() {
     install_yq();
-    match which("lnd") {
-        Err(which::Error::CannotFindBinaryPath) => install_lnd(),
-        Err(error) => panic!("{}", error),
-        Ok(_) => {}
+    if !is_in_path("lnd") {
+        install_lnd();
     }
     let StdoutUntrimmed(version) = cmd!(%"lnd --version");
     eprintln!("{}", version);
     if !version.contains(LND_VERSION) {
-        panic!("version mismatch");
+        panic!(
+            "LND version mismatch: expected: {} actual: {}",
+            LND_VERSION, version
+        );
     }
 
     if !Path::new("/etc/lnd/wallet-password").exists() {
@@ -54,12 +63,8 @@ fn main() {
 }
 
 fn install_yq() {
-    match which("yq") {
-        Err(which::Error::CannotFindBinaryPath) => {
-            cmd_unit!(%"pip3 install yq");
-        }
-        Err(error) => panic!("{}", error),
-        Ok(_) => {}
+    if !is_in_path("yq") {
+        cmd_unit!(%"pip3 install yq");
     }
     cmd_unit!(%"yq --version");
 }

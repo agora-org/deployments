@@ -1,7 +1,7 @@
-host := `cat config.yaml | yq --exit-status .$HOSTNAME.ipv4 -r`
+ip := `cat config.yaml | yq --exit-status .$HOSTNAME.ipv4 -r`
 
-ssh:
-  ssh root@{{ host }}
+ssh: sync-justfile
+  ssh root@{{ ip }}
 
 test-on-vagrant:
   ssh-keygen -f ~/.ssh/known_hosts -R 192.168.50.4
@@ -16,12 +16,12 @@ test-render-templates:
   HOSTNAME=athens just render-templates
 
 run +args: sync-justfile
-  ssh root@{{ host }} 'just {{ args }}'
+  ssh root@{{ ip }} 'just {{ args }}'
 
 lncli +args: (run "lncli" args)
 
 sync-justfile:
-  scp remote.justfile root@{{ host }}:justfile
+  scp remote.justfile root@{{ ip }}:justfile
 
 deploy:
   ./deploy
