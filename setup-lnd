@@ -126,12 +126,8 @@ fn setup_wallet() {
             "NON_EXISTING" => {
                 panic!("Please run `just create-wallet`!");
             }
-            "LOCKED" => {
-                eprintln!("waiting for wallet to be unlocked...");
-                thread::sleep(Duration::from_secs(1));
-            }
-            "UNLOCKED" => {
-                eprintln!("waiting for wallet to be active...");
+            "LOCKED" | "UNLOCKED" | "WAITING_TO_START" => {
+                eprintln!("waiting for wallet to activate...");
                 thread::sleep(Duration::from_secs(1));
             }
             "RPC_ACTIVE" => break,
