@@ -96,6 +96,7 @@ fn install_lntop() {
     if !is_in_path("lntop") {
         cmd_unit!(%"rm -rf lntop");
         cmd_unit!(%"git clone https://github.com/edouardparis/lntop.git");
+        cmd_unit!(CurrentDir("lntop"), %"git checkout 1cec71afa625e1513a237603a2e6bc2f5b1dc717");
         cmd_unit!(CurrentDir("lntop"), %"go install ./...");
         cmd_unit!(%"cp go/bin/lntop /usr/local/bin");
     }
