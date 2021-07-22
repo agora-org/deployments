@@ -32,27 +32,9 @@ fn is_in_path(binary: &str) -> bool {
 fn main() {
     env_clean();
     install_yq();
-    install_lnd();
+    setup_lnd();
     install_lntop();
-    install_agora();
-
-    if !Path::new("/etc/lnd/wallet-password").exists() {
-        eprintln!("Removing `wallet-unlock-password-file` setting from lnd.conf…");
-
-        let conf = fs::read_to_string("/etc/lnd/lnd.conf")
-            .unwrap()
-            .lines()
-            .filter(|line| !line.contains("/etc/lnd/wallet-password"))
-            .collect::<Vec<&str>>()
-            .join("\n");
-
-        fs::write("/etc/lnd/lnd.conf", conf).unwrap();
-    }
-
-    cmd_unit!(%"systemctl daemon-reload");
-    cmd_unit!(%"systemctl enable lnd");
-    cmd_unit!(%"systemctl restart lnd");
-    setup_wallet();
+    setup_agora();
 }
 
 fn env_clean() {
@@ -71,7 +53,7 @@ fn install_yq() {
     cmd_unit!(%"yq --version");
 }
 
-fn install_lnd() {
+fn setup_lnd() {
     if !is_in_path("lnd") {
         cmd_unit!(
             "wget",
@@ -101,25 +83,24 @@ fn install_lnd() {
             LND_VERSION, version
         );
     }
-}
 
-fn install_lntop() {
-    if !is_in_path("lntop") {
-        cmd_unit!(%"rm -rf lntop");
-        cmd_unit!(%"git clone https://github.com/edouardparis/lntop.git");
-        cmd_unit!(CurrentDir("lntop"), %"git checkout 1cec71afa625e1513a237603a2e6bc2f5b1dc717");
-        cmd_unit!(CurrentDir("lntop"), %"go install ./...");
-        cmd_unit!(%"cp go/bin/lntop /usr/local/bin");
-    }
-    cmd_unit!(%"lntop --version");
-}
+    if !Path::new("/etc/lnd/wallet-password").exists() {
+        eprintln!("Removing `wallet-unlock-password-file` setting from lnd.conf…");
 
-fn install_agora() {
-    if !Path::new("agora").is_dir() {
-        cmd_unit!(%"git clone https://github.com/agora-org/agora.git");
+        let conf = fs::read_to_string("/etc/lnd/lnd.conf")
+            .unwrap()
+            .lines()
+            .filter(|line| !line.contains("/etc/lnd/wallet-password"))
+            .collect::<Vec<&str>>()
+            .join("\n");
+
+        fs::write("/etc/lnd/lnd.conf", conf).unwrap();
     }
-    cmd_unit!(LogCommand, CurrentDir("agora"), %"git pull --ff-only");
-    cmd_unit!(LogCommand, CurrentDir("agora"), %"cargo install --path . --force");
+
+    cmd_unit!(%"systemctl daemon-reload");
+    cmd_unit!(%"systemctl enable lnd");
+    cmd_unit!(%"systemctl restart lnd");
+    setup_wallet();
 }
 
 fn setup_wallet() {
@@ -154,4 +135,36 @@ fn setup_wallet() {
             _ => panic!("Unknown LND state: {}", state),
         }
     }
+}
+
+fn install_lntop() {
+    if !is_in_path("lntop") {
+        cmd_unit!(%"rm -rf lntop");
+        cmd_unit!(%"git clone https://github.com/edouardparis/lntop.git");
+        cmd_unit!(CurrentDir("lntop"), %"git checkout 1cec71afa625e1513a237603a2e6bc2f5b1dc717");
+        cmd_unit!(CurrentDir("lntop"), %"go install ./...");
+        cmd_unit!(%"cp go/bin/lntop /usr/local/bin");
+    }
+    cmd_unit!(%"lntop --version");
+}
+
+fn setup_agora() {
+    if !Path::new("agora").is_dir() {
+        cmd_unit!(%"git clone https://github.com/agora-org/agora.git");
+    }
+    cmd_unit!(LogCommand, CurrentDir("agora"), %"git pull --ff-only");
+    cmd_unit!(LogCommand, CurrentDir("agora"), %"cargo install --path . --root /usr/local --force");
+
+    let Status(status) = cmd!(%"id --user agora");
+    if !status.success() {
+        cmd_unit!(%"useradd --system agora");
+    }
+
+    cmd_unit!(%"mkdir -p /srv/agora");
+    cmd_unit!(%"cp agora/README.md /srv/agora/");
+    cmd_unit!(%"chown -R agora:agora /srv/agora");
+
+    cmd_unit!(%"systemctl daemon-reload");
+    cmd_unit!(%"systemctl enable agora");
+    cmd_unit!(%"systemctl restart agora");
 }

@@ -62,6 +62,10 @@ fn copy_lnd_files() {
     scp("tmp/lntop.toml", "~/.lntop/config.toml");
 }
 
+fn copy_agora_files() {
+    scp("agora.service", "/etc/systemd/system/");
+}
+
 fn install_just() {
     let Status(status) = ssh("just --version");
     if !status.success() {
@@ -88,6 +92,7 @@ fn main() {
     scp("50reboot-on-upgrades", "/etc/apt/apt.conf.d/");
     copy_bitcoind_files();
     copy_lnd_files();
+    copy_agora_files();
     install_just();
     add_cargo_bin_to_path();
     ssh_unit(("hostnamectl", "set-hostname", &*HOSTNAME));

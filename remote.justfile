@@ -59,7 +59,7 @@ setup-bitcoind:
   fi
   systemctl daemon-reload
   systemctl enable bitcoind
-  systemctl restart bitcoind
+  systemctl restart bitcoind --no-block
 
 setup-lnd:
   ./setup-lnd

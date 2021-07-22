@@ -1,40 +1,24 @@
 [Unit]
-Description=lnd
+Description=Agora daemon
 After=network.target
-StartLimitIntervalSec=10m
-StartLimitBurst=120
-Requires=bitcoind.service
 
 [Service]
-ExecStart=/usr/local/bin/lnd \
-  --configfile=/etc/lnd/lnd.conf
-
-# Make sure the config directory is readable by the service user
-PermissionsStartOnly=true
-ExecStartPre=/bin/chgrp bitcoin /etc/lnd
+ExecStart=/usr/local/bin/agora \
+  --directory /srv/agora
+ExecStartPre=mkdir -p /srv/agora
 
 # Process management
 ####################
 
 Type=simple
 Restart=on-failure
-TimeoutStopSec=10m
-RestartSec=5s
+TimeoutStopSec=600
 
 # Directory creation and permissions
 ####################################
 
-# Run as bitcoin:bitcoin
-User=bitcoin
-Group=bitcoin
-
-# /etc/lnd
-ConfigurationDirectory=lnd
-ConfigurationDirectoryMode=0710
-
-# /var/lib/lnd
-StateDirectory=lnd
-StateDirectoryMode=0710
+User=agora
+Group=agora
 
 # Hardening measures
 ####################
