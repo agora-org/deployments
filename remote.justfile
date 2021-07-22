@@ -1,5 +1,5 @@
 tail-logs:
-  journalctl -f -u bitcoind -u lnd
+  journalctl -f -u bitcoind -u lnd -u agora
 
 setup: install-base-packages install-rust setup-volume setup-bitcoind setup-lnd
 
