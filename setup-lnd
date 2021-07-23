@@ -30,20 +30,10 @@ fn is_in_path(binary: &str) -> bool {
 }
 
 fn main() {
-    env_clean();
     install_yq();
     setup_lnd();
     install_lntop();
     setup_agora();
-}
-
-fn env_clean() {
-    for (key, _value) in std::env::vars_os() {
-        let key_string = key.to_string_lossy();
-        if key_string.starts_with("CARGO") || key_string.starts_with("RUST") {
-            std::env::remove_var(key);
-        }
-    }
 }
 
 fn install_yq() {
