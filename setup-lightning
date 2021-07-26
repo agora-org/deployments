@@ -1,7 +1,7 @@
 #!/usr/bin/env rust-script
 //! ```cargo
 //! [dependencies]
-//! cradle = "=0.0.12"
+//! cradle = "=0.0.13"
 //! lazy_static = "=1.4.0"
 //! serde_yaml = "=0.8.17"
 //! which = "=4.1.0"
@@ -145,8 +145,7 @@ fn setup_agora() {
     cmd_unit!(LogCommand, CurrentDir("agora"), %"git pull --ff-only");
     cmd_unit!(LogCommand, CurrentDir("agora"), %"cargo install --path . --root /usr/local --force");
 
-    let Status(status) = cmd!(%"id --user agora");
-    if !status.success() {
+    if !cmd!(%"id --user agora") {
         cmd_unit!(%"useradd --system agora");
     }
 

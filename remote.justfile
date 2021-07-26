@@ -1,7 +1,7 @@
 tail-logs:
   journalctl -f -u bitcoind -u lnd -u agora
 
-setup: install-base-packages install-rust setup-volume setup-bitcoind setup-lnd
+setup: install-base-packages install-rust setup-volume setup-bitcoind setup-lightning
 
 install-base-packages:
   #!/usr/bin/env bash
@@ -61,8 +61,8 @@ setup-bitcoind:
   systemctl enable bitcoind
   systemctl restart bitcoind --no-block
 
-setup-lnd:
-  ./setup-lnd
+setup-lightning:
+  ./setup-lightning
 
 lncli +command:
   #!/usr/bin/env bash
