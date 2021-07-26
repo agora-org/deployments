@@ -1,6 +1,15 @@
 tail-logs:
   journalctl -f -u bitcoind -u lnd -u agora
 
+list-invoices:
+  just lncli listinvoices \
+    | yq --raw-output \
+      '.invoices[] \
+       | "memo:    \(.memo)\n\
+          state:   \(.state)\n\
+          created: \(.creation_date | tonumber | todate)\n\
+          value:   \(.value)\n---"'
+
 setup: install-base-packages install-rust setup-volume setup-bitcoind setup-lightning
 
 install-base-packages:
