@@ -7,7 +7,6 @@ AmbientCapabilities=CAP_NET_BIND_SERVICE
 ExecStart=/usr/local/bin/agora \
   --directory /srv/agora \
   --port 80
-ExecStartPre=mkdir -p /srv/agora
 
 # Process management
 ####################
