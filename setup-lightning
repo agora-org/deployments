@@ -8,7 +8,12 @@
 //! ```
 
 use cradle::*;
-use std::{fs, path::Path, thread, time::Duration};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    thread,
+    time::Duration,
+};
 use which::which;
 
 const LND_VERSION: &str = "v0.13.0-beta";
@@ -139,6 +144,20 @@ fn install_lntop() {
 }
 
 fn setup_agora() {
+    cmd_unit!(%"setfacl -m u:agora:x /var/lib/lnd");
+    cmd_unit!(%"setfacl -m u:agora:r /var/lib/lnd/tls.cert");
+
+    let invoice_macaroon_path = PathBuf::from(format!(
+        "/var/lib/lnd/data/chain/bitcoin/{}/invoice.macaroon",
+        *NETWORK
+    ));
+
+    for path in invoice_macaroon_path.ancestors() {
+        cmd_unit!(%"setfacl -m u:agora:X", path);
+    }
+
+    cmd_unit!(%"setfacl -m u:agora:r", invoice_macaroon_path);
+
     if !Path::new("agora").is_dir() {
         cmd_unit!(%"git clone https://github.com/agora-org/agora.git");
     }

@@ -63,7 +63,7 @@ fn copy_lnd_files() {
 }
 
 fn copy_agora_files() {
-    scp("agora.service", "/etc/systemd/system/");
+    scp("tmp/agora.service", "/etc/systemd/system/");
 }
 
 fn install_just() {

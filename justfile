@@ -34,8 +34,9 @@ deploy:
 render-templates:
   mkdir -p tmp
   rm -f tmp/*
-  ./render-template bitcoind.service > tmp/bitcoind.service
+  ./render-template agora.service > tmp/agora.service
   ./render-template bitcoin.conf > tmp/bitcoin.conf
+  ./render-template bitcoind.service > tmp/bitcoind.service
   ./render-template lnd.conf > tmp/lnd.conf
   ./render-template lntop.toml > tmp/lntop.toml
 
