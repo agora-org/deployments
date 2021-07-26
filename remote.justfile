@@ -8,6 +8,7 @@ install-base-packages:
   set -euxo pipefail
   apt-get update
   apt-get install --yes \
+    acl \
     atool \
     build-essential \
     golang \

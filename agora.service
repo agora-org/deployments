@@ -6,6 +6,9 @@ After=network.target
 AmbientCapabilities=CAP_NET_BIND_SERVICE
 ExecStart=/usr/local/bin/agora \
   --directory /srv/agora \
+  --lnd-rpc-authority localhost:10009 \
+  --lnd-rpc-cert-path /var/lib/lnd/tls.cert \
+  --lnd-rpc-macaroon-path /var/lib/lnd/data/chain/bitcoin/{{network}}/invoice.macaroon \
   --port 80
 
 # Process management
