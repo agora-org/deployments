@@ -23,6 +23,8 @@ install-base-packages:
     golang \
     jq \
     python3-pip \
+    ripgrep \
+    silversearcher-ag \
     tree \
     unattended-upgrades \
     update-notifier-common \

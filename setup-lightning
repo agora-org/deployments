@@ -110,8 +110,8 @@ fn setup_wallet() {
             if status.success() {
                 break stdout;
             }
-            assert!(stderr.contains("connection refused"));
             eprint!("{}", stderr);
+            assert!(stderr.contains("connection refused"));
             eprintln!("waiting for lnd to be functional...");
             thread::sleep(Duration::from_secs(1));
         };
