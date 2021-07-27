@@ -144,6 +144,10 @@ fn install_lntop() {
 }
 
 fn setup_agora() {
+    if !cmd!(%"id --user agora") {
+        cmd_unit!(%"useradd --system agora");
+    }
+
     cmd_unit!(%"setfacl -m u:agora:x /var/lib/lnd");
     cmd_unit!(%"setfacl -m u:agora:r /var/lib/lnd/tls.cert");
 
@@ -163,10 +167,6 @@ fn setup_agora() {
     }
     cmd_unit!(LogCommand, CurrentDir("agora"), %"git pull --ff-only");
     cmd_unit!(LogCommand, CurrentDir("agora"), %"cargo install --path . --root /usr/local --force");
-
-    if !cmd!(%"id --user agora") {
-        cmd_unit!(%"useradd --system agora");
-    }
 
     cmd_unit!(%"mkdir -p /srv/agora");
     cmd_unit!(%"cp agora/README.md /srv/agora/");

@@ -3,12 +3,14 @@ vagrant:
   ipv4: 192.168.50.4
   ipv6: fde4:8dba:82e1::c4
   network: regtest
+  autopilot_active: true
 
 kos:
   bitcoind_requires: ""
   ipv4: 66.175.211.57
   ipv6: 2600:3c03::f03c:92ff:fe31:d717
   network: testnet
+  autopilot_active: true
 
 athens:
   bitcoind_requires: Requires=mnt-athens.mount
@@ -16,3 +18,4 @@ athens:
   ipv4: 66.175.216.63
   ipv6: 2600:3c01::f03c:92ff:fe75:056f
   network: mainnet
+  autopilot_active: false
