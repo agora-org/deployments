@@ -46,7 +46,7 @@ install-rust:
     export CARGO_TARGET_DIR="/vagrant/target"
   fi
 
-  cargo install rust-script
+  cargo install rust-script --locked
 
 setup-volume:
   #!/usr/bin/env bash
