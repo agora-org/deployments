@@ -33,7 +33,7 @@ deploy:
 
 render-templates:
   mkdir -p tmp
-  rm -f tmp/*
+  rm -rf tmp/*
   ./render-template agora.service > tmp/agora.service
   ./render-template bitcoin.conf > tmp/bitcoin.conf
   ./render-template bitcoind.service > tmp/bitcoind.service
