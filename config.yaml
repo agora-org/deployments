@@ -1,7 +1,7 @@
 vagrant:
   autopilot_active: true
   bitcoind_requires: ""
-  content_ref: mvp-post
+  content_revision: mvp-post
   domain: 192.168.50.4
   ipv4: 192.168.50.4
   ipv6: fde4:8dba:82e1::c4
@@ -10,7 +10,7 @@ vagrant:
 kos:
   autopilot_active: true
   bitcoind_requires: ""
-  content_ref: mvp-post
+  content_revision: mvp-post
   domain: test.agora.download
   ipv4: 66.175.211.57
   ipv6: 2600:3c03::f03c:92ff:fe31:d717
@@ -20,7 +20,7 @@ athens:
   autopilot_active: false
   bitcoind_requires: Requires=mnt-athens.mount
   blocksdir: /mnt/athens/
-  content_ref: master
+  content_revision: master
   domain: agora.download
   ipv4: 66.175.216.63
   ipv6: 2600:3c01::f03c:92ff:fe75:056f

@@ -16,7 +16,7 @@ lazy_static::lazy_static! {
         .clone()
   };
   static ref IP: &'static str = CONFIG["ipv4"].as_str().unwrap();
-  static ref CONTENT_REF: &'static str = CONFIG["content_ref"].as_str().unwrap();
+  static ref CONTENT_REVISION: &'static str = CONFIG["content_revision"].as_str().unwrap();
   static ref DOMAIN: &'static str = CONFIG["domain"].as_str().unwrap();
 }
 
@@ -73,7 +73,7 @@ fn copy_agora_content() {
         cmd_unit!(%"git clone git@github.com:agora-org/content.git tmp/content");
     }
 
-    cmd_unit!(CurrentDir("tmp/content"), %"git checkout", *CONTENT_REF);
+    cmd_unit!(CurrentDir("tmp/content"), %"git checkout", *CONTENT_REVISION);
     cmd_unit!(CurrentDir("tmp/content"), %"git pull --ff-only");
     cmd_unit!(
         "rsync",
