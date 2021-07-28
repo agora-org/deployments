@@ -35,9 +35,17 @@ install-base-packages:
   touch ~/.hushlogin
 
 install-rust:
+  #!/usr/bin/env bash
+  set -euxo pipefail
+
   rustup --version || \
     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
     sh -s -- -y --no-modify-path
+
+  if [[ `hostname` == vagrant ]]; then
+    export CARGO_TARGET_DIR="/vagrant/target"
+  fi
+
   cargo install rust-script
 
 setup-volume:

@@ -1,7 +1,7 @@
 #!/usr/bin/env rust-script
 //! ```cargo
 //! [dependencies]
-//! cradle = "=0.0.13"
+//! cradle = "=0.0.14"
 //! lazy_static = "=1.4.0"
 //! serde_yaml = "=0.8.17"
 //! which = "=4.1.0"
@@ -166,7 +166,17 @@ fn setup_agora() {
         cmd_unit!(%"git clone https://github.com/agora-org/agora.git");
     }
     cmd_unit!(LogCommand, CurrentDir("agora"), %"git pull --ff-only");
-    cmd_unit!(LogCommand, CurrentDir("agora"), %"cargo install --path . --root /usr/local --force");
+    let StdoutTrimmed(hostname) = cmd!("hostname");
+    cmd_unit!(
+        LogCommand,
+        CurrentDir("agora"),
+        if hostname == "vagrant" {
+            vec![Env("CARGO_TARGET_DIR", "/vagrant/target")]
+        } else {
+            vec![]
+        },
+        %"cargo install --path . --root /usr/local --force"
+    );
 
     cmd_unit!(%"mkdir -p /srv/agora");
     cmd_unit!(%"cp agora/README.md /srv/agora/");
