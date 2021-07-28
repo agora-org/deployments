@@ -6,7 +6,7 @@
 //! serde_yaml = "=0.8.17"
 //! ```
 use cradle::*;
-use std::fs;
+use std::{fs, path::Path};
 
 lazy_static::lazy_static! {
   static ref HOSTNAME: String = std::env::var("HOSTNAME").expect("HOSTNAME env var not set");
@@ -66,6 +66,23 @@ fn copy_agora_files() {
     scp("tmp/agora.service", "/etc/systemd/system/");
 }
 
+fn copy_agora_content() {
+    if !Path::new("tmp/content").exists() {
+        cmd_unit!(%"git clone git@github.com:agora-org/content.git tmp/content");
+    }
+
+    cmd_unit!(CurrentDir("tmp/content"), %"git checkout mvp-post");
+    cmd_unit!(CurrentDir("tmp/content"), %"git pull --ff-only");
+    cmd_unit!(
+      %"rsync --recursive --links --times --progress --delete --mkpath --exclude .git tmp/content/",
+      format!("root@{}:/srv/agora/", *IP),
+    );
+
+    // TODO:
+    // - add README.md to .gitignore in content
+    // - allow specifying branch for kos
+}
+
 fn install_just() {
     let Status(status) = ssh("just --version");
     if !status.success() {
@@ -94,6 +111,7 @@ fn main() {
     cmd_unit!(%"rust-script --test setup-lightning");
     copy_lnd_files();
     copy_agora_files();
+    copy_agora_content();
     install_just();
     add_cargo_bin_to_path();
     ssh_unit(("hostnamectl", "set-hostname", &*HOSTNAME));
