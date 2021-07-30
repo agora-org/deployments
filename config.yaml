@@ -1,4 +1,5 @@
 vagrant:
+  agora_revision: config-files
   autopilot_active: true
   bitcoind_requires: ""
   content_revision: mvp-post
@@ -8,6 +9,7 @@ vagrant:
   network: regtest
 
 kos:
+  agora_revision: master
   autopilot_active: true
   bitcoind_requires: ""
   content_revision: mvp-post
@@ -17,6 +19,7 @@ kos:
   network: testnet
 
 athens:
+  agora_revision: master
   autopilot_active: false
   bitcoind_requires: Requires=mnt-athens.mount
   blocksdir: /mnt/athens/

@@ -57,8 +57,8 @@ fn copy_lnd_files() {
     ssh_unit("mkdir -p /etc/lnd");
     ssh_unit("chmod 710 /etc/lnd");
     scp("tmp/lnd.conf", "/etc/lnd/");
-    scp("setup-lightning", "~/");
-    ssh_unit("chmod +x setup-lightning");
+    scp("setup-agora", "~/");
+    ssh_unit("chmod +x setup-agora");
 
     ssh_unit("mkdir -p .lntop");
     scp("tmp/lntop.toml", "~/.lntop/config.toml");
@@ -108,7 +108,7 @@ fn main() {
     copy_config();
     scp("50reboot-on-upgrades", "/etc/apt/apt.conf.d/");
     copy_bitcoind_files();
-    cmd_unit!(%"rust-script --test setup-lightning");
+    cmd_unit!(%"rust-script --test setup-agora");
     copy_lnd_files();
     copy_agora_files();
     copy_agora_content();

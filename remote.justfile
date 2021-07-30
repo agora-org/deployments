@@ -10,7 +10,7 @@ list-invoices:
           created: \(.creation_date | tonumber | todate)\n\
           value:   \(.value)\n---"'
 
-setup: install-base-packages install-rust setup-volume setup-bitcoind setup-lightning
+setup: install-base-packages install-rust setup-volume setup-bitcoind setup-agora
 
 install-base-packages:
   #!/usr/bin/env bash
@@ -81,8 +81,8 @@ setup-bitcoind:
   systemctl enable bitcoind
   systemctl restart bitcoind --no-block
 
-setup-lightning:
-  ./setup-lightning
+setup-agora:
+  ./setup-agora
 
 lncli +command:
   #!/usr/bin/env bash
