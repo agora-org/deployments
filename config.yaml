@@ -1,5 +1,5 @@
 vagrant:
-  agora_revision: config-files
+  agora_revision: master
   autopilot_active: true
   bitcoind_requires: ""
   content_revision: mvp-post
