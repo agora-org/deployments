@@ -166,6 +166,7 @@ fn setup_agora() {
     if !Path::new("agora").is_dir() {
         cmd_unit!(%"git clone https://github.com/agora-org/agora.git");
     }
+    cmd_unit!(LogCommand, CurrentDir("agora"), %"git fetch");
     cmd_unit!(LogCommand, CurrentDir("agora"), %"git checkout", *AGORA_REVISION);
     cmd_unit!(LogCommand, CurrentDir("agora"), %"git pull --ff-only");
     let StdoutTrimmed(hostname) = cmd!("hostname");
