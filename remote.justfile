@@ -10,7 +10,9 @@ list-invoices:
           created: \(.creation_date | tonumber | todate)\n\
           value:   \(.value)\n---"'
 
-setup: install-base-packages install-rust setup-volume setup-bitcoind setup-agora
+setup: setup-system setup-volume setup-bitcoind setup-agora
+
+setup-system: install-base-packages install-bottom install-rust
 
 install-base-packages:
   #!/usr/bin/env bash
@@ -29,10 +31,20 @@ install-base-packages:
     unattended-upgrades \
     update-notifier-common \
     vim
+
   if ! grep _just /root/.bashrc; then
     just --completions bash >> /root/.bashrc
   fi
   touch ~/.hushlogin
+
+install-bottom:
+  #!/usr/bin/env bash
+  set -euxo pipefail
+
+  if ! which btm; then
+    curl -LO https://github.com/ClementTsang/bottom/releases/download/0.6.3/bottom_0.6.3_amd64.deb
+    dpkg -i bottom_0.6.3_amd64.deb
+  fi
 
 install-rust:
   #!/usr/bin/env bash
