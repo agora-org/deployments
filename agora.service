@@ -1,6 +1,8 @@
 [Unit]
-Description=Agora daemon
 After=network.target
+Description=Agora daemon
+StartLimitBurst=120
+StartLimitIntervalSec=10m
 
 [Service]
 AmbientCapabilities=CAP_NET_BIND_SERVICE
@@ -16,7 +18,8 @@ ExecStart=/usr/local/bin/agora \
 
 Type=simple
 Restart=on-failure
-TimeoutStopSec=600
+TimeoutStopSec=10m
+RestartSec=5s
 
 # Directory creation and permissions
 ####################################
