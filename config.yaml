@@ -2,7 +2,7 @@ vagrant:
   agora_revision: master
   autopilot_active: true
   bitcoind_requires: ""
-  content_revision: mvp-post
+  content_revision: master
   domain: 192.168.50.4
   ipv4: 192.168.50.4
   ipv6: fde4:8dba:82e1::c4
@@ -12,7 +12,7 @@ kos:
   agora_revision: master
   autopilot_active: true
   bitcoind_requires: ""
-  content_revision: mvp-post
+  content_revision: master
   domain: test.agora.download
   ipv4: 66.175.211.57
   ipv6: 2600:3c03::f03c:92ff:fe31:d717
