@@ -9,6 +9,10 @@ list-invoices:
           state:   \(.state)\n\
           created: \(.creation_date | tonumber | todate)\n\
           value:   \(.value)\n---"'
+  just lncli listinvoices \
+    | yq --raw-output \
+      '.invoices \
+       | "number of invoices: \(length)"'
 
 setup: setup-system setup-volume setup-bitcoind setup-agora
 
