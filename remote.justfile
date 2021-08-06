@@ -12,7 +12,7 @@ list-invoices:
   just lncli listinvoices \
     | yq --raw-output \
       '.invoices \
-       | "number of invoices: \(length)\n"'
+       | "number of invoices: \(length)"'
 
 setup: setup-system setup-volume setup-bitcoind setup-agora
 
