@@ -6,8 +6,10 @@ vagrant:
   domain: 192.168.50.4
   ipv4: 192.168.50.4
   ipv6: fde4:8dba:82e1::c4
-  lnd_rpclisten: 0.0.0.0
   network: regtest
+  lnd:
+    rpclisten: 0.0.0.0
+    tlsextradomain: ~
 
 kos:
   agora_revision: master
@@ -17,8 +19,10 @@ kos:
   domain: test.agora.download
   ipv4: 66.175.211.57
   ipv6: 2600:3c03::f03c:92ff:fe31:d717
-  lnd_rpclisten: 0.0.0.0
   network: testnet
+  lnd:
+    rpclisten: 0.0.0.0
+    tlsextradomain: test.agora.download
 
 athens:
   agora_revision: master
@@ -29,5 +33,7 @@ athens:
   domain: agora.download
   ipv4: 66.175.216.63
   ipv6: 2600:3c01::f03c:92ff:fe75:056f
-  lnd_rpclisten: 127.0.0.1
   network: mainnet
+  lnd:
+    rpclisten: 127.0.0.1
+    tlsextradomain: agora.download
