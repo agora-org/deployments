@@ -182,7 +182,11 @@ fn setup_agora() {
     );
 
     cmd_unit!(%"mkdir -p /srv/agora");
-    fs::write("/srv/agora/.agora.yaml", "paid: true").unwrap();
+    fs::write(
+        "/srv/agora/.agora.yaml",
+        "{paid: true, base-price: 1000 sat}",
+    )
+    .unwrap();
     cmd_unit!(%"cp agora/README.md /srv/agora/");
     cmd_unit!(%"chown -R agora:agora /srv/agora");
 
