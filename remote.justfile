@@ -62,6 +62,8 @@ install-rust:
     export CARGO_TARGET_DIR="/vagrant/target"
   fi
 
+  rustup update stable
+
   cargo install rust-script --locked
 
 setup-volume:
