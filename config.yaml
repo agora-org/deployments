@@ -1,4 +1,5 @@
 vagrant:
+  acme: false
   agora_revision: master
   autopilot_active: true
   bitcoind_requires: ""
@@ -6,12 +7,13 @@ vagrant:
   domain: 192.168.50.4
   ipv4: 192.168.50.4
   ipv6: fde4:8dba:82e1::c4
-  network: regtest
   lnd:
     rpclisten: 0.0.0.0
     tlsextradomain: ~
+  network: regtest
 
 kos:
+  acme: true
   agora_revision: master
   autopilot_active: true
   bitcoind_requires: ""
@@ -19,12 +21,13 @@ kos:
   domain: test.agora.download
   ipv4: 66.175.211.57
   ipv6: 2600:3c03::f03c:92ff:fe31:d717
-  network: testnet
   lnd:
     rpclisten: 0.0.0.0
     tlsextradomain: test.agora.download
+  network: testnet
 
 athens:
+  acme: true
   agora_revision: master
   autopilot_active: false
   bitcoind_requires: Requires=mnt-athens.mount
@@ -33,7 +36,7 @@ athens:
   domain: agora.download
   ipv4: 66.175.216.63
   ipv6: 2600:3c01::f03c:92ff:fe75:056f
-  network: mainnet
   lnd:
     rpclisten: 127.0.0.1
     tlsextradomain: agora.download
+  network: mainnet
