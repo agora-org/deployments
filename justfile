@@ -2,7 +2,7 @@ set positional-arguments
 
 ip := `cat config.yaml | yq --exit-status .$HOSTNAME.ipv4 -r`
 
-ssh *args: sync-justfile
+ssh *args:
   ssh root@{{ ip }} "$@"
 
 test-on-vagrant:
