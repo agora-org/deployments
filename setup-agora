@@ -1,7 +1,7 @@
 #!/usr/bin/env rust-script
 //! ```cargo
 //! [dependencies]
-//! cradle = "=0.0.14"
+//! cradle = "=0.1.0"
 //! lazy_static = "=1.4.0"
 //! serde_yaml = "=0.8.17"
 //! which = "=4.1.0"
@@ -44,14 +44,14 @@ fn main() {
 
 fn install_yq() {
     if !is_in_path("yq") {
-        cmd_unit!(%"pip3 install yq");
+        run!(%"pip3 install yq");
     }
-    cmd_unit!(%"yq --version");
+    run!(%"yq --version");
 }
 
 fn setup_lnd() {
     if !is_in_path("lnd") {
-        cmd_unit!(
+        run!(
             "wget",
             ("-O", format!("lnd-linux-amd64-{}.tar.gz", LND_VERSION)),
             format!(
@@ -60,7 +60,7 @@ fn setup_lnd() {
                 LND_VERSION
             ),
         );
-        cmd_unit!(
+        run!(
             "tar",
             "-xzvf",
             format!("lnd-linux-amd64-{}.tar.gz", LND_VERSION),
@@ -71,7 +71,7 @@ fn setup_lnd() {
         );
     }
 
-    let StdoutUntrimmed(version) = cmd!(%"lnd --version");
+    let StdoutUntrimmed(version) = run_output!(%"lnd --version");
     eprintln!("{}", version);
     if !version.contains(LND_VERSION) {
         panic!(
@@ -93,16 +93,16 @@ fn setup_lnd() {
         fs::write("/etc/lnd/lnd.conf", conf).unwrap();
     }
 
-    cmd_unit!(%"systemctl daemon-reload");
-    cmd_unit!(%"systemctl enable lnd");
-    cmd_unit!(%"systemctl restart lnd");
+    run!(%"systemctl daemon-reload");
+    run!(%"systemctl enable lnd");
+    run!(%"systemctl restart lnd");
     setup_wallet();
 }
 
 fn setup_wallet() {
     loop {
         let json = loop {
-            let (Status(status), StdoutUntrimmed(stdout), Stderr(stderr)) = cmd!(
+            let (Status(status), StdoutUntrimmed(stdout), Stderr(stderr)) = run_output!(
                 "lncli",
                 ("--network", &*NETWORK),
                 "--lnddir=/var/lib/lnd",
@@ -135,22 +135,22 @@ fn setup_wallet() {
 
 fn install_lntop() {
     if !is_in_path("lntop") {
-        cmd_unit!(%"rm -rf lntop");
-        cmd_unit!(%"git clone https://github.com/edouardparis/lntop.git");
-        cmd_unit!(CurrentDir("lntop"), %"git checkout 1cec71afa625e1513a237603a2e6bc2f5b1dc717");
-        cmd_unit!(CurrentDir("lntop"), %"go install ./...");
-        cmd_unit!(%"cp go/bin/lntop /usr/local/bin");
+        run!(%"rm -rf lntop");
+        run!(%"git clone https://github.com/edouardparis/lntop.git");
+        run!(CurrentDir("lntop"), %"git checkout 1cec71afa625e1513a237603a2e6bc2f5b1dc717");
+        run!(CurrentDir("lntop"), %"go install ./...");
+        run!(%"cp go/bin/lntop /usr/local/bin");
     }
-    cmd_unit!(%"lntop --version");
+    run!(%"lntop --version");
 }
 
 fn setup_agora() {
-    if !cmd!(%"id --user agora") {
-        cmd_unit!(%"useradd --system agora");
+    if !run_output!(%"id --user agora") {
+        run!(%"useradd --system agora");
     }
 
-    cmd_unit!(%"setfacl -m u:agora:x /var/lib/lnd");
-    cmd_unit!(%"setfacl -m u:agora:r /var/lib/lnd/tls.cert");
+    run!(%"setfacl -m u:agora:x /var/lib/lnd");
+    run!(%"setfacl -m u:agora:r /var/lib/lnd/tls.cert");
 
     let invoice_macaroon_path = PathBuf::from(format!(
         "/var/lib/lnd/data/chain/bitcoin/{}/invoice.macaroon",
@@ -158,19 +158,19 @@ fn setup_agora() {
     ));
 
     for path in invoice_macaroon_path.ancestors() {
-        cmd_unit!(%"setfacl -m u:agora:X", path);
+        run!(%"setfacl -m u:agora:X", path);
     }
 
-    cmd_unit!(%"setfacl -m u:agora:r", invoice_macaroon_path);
+    run!(%"setfacl -m u:agora:r", invoice_macaroon_path);
 
     if !Path::new("agora").is_dir() {
-        cmd_unit!(%"git clone https://github.com/agora-org/agora.git");
+        run!(%"git clone https://github.com/agora-org/agora.git");
     }
-    cmd_unit!(LogCommand, CurrentDir("agora"), %"git fetch");
-    cmd_unit!(LogCommand, CurrentDir("agora"), %"git checkout", *AGORA_REVISION);
-    cmd_unit!(LogCommand, CurrentDir("agora"), %"git pull --ff-only");
-    let StdoutTrimmed(hostname) = cmd!("hostname");
-    cmd_unit!(
+    run!(LogCommand, CurrentDir("agora"), %"git fetch");
+    run!(LogCommand, CurrentDir("agora"), %"git checkout", *AGORA_REVISION);
+    run!(LogCommand, CurrentDir("agora"), %"git pull --ff-only");
+    let StdoutTrimmed(hostname) = run_output!("hostname");
+    run!(
         LogCommand,
         CurrentDir("agora"),
         if hostname == "vagrant" {
@@ -181,10 +181,10 @@ fn setup_agora() {
         %"cargo install --path . --root /usr/local --locked --force"
     );
 
-    cmd_unit!(%"cp agora/README.md /srv/agora/");
-    cmd_unit!(%"chown -R agora:agora /srv/agora");
+    run!(%"cp agora/README.md /srv/agora/");
+    run!(%"chown -R agora:agora /srv/agora");
 
-    cmd_unit!(%"systemctl daemon-reload");
-    cmd_unit!(%"systemctl enable agora");
-    cmd_unit!(%"systemctl restart agora");
+    run!(%"systemctl daemon-reload");
+    run!(%"systemctl enable agora");
+    run!(%"systemctl restart agora");
 }
