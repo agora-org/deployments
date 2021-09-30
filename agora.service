@@ -12,6 +12,7 @@ ExecStart=/usr/local/bin/agora \
   --acme-domain {{ domain }} \
   --address :: \
   --directory /srv/agora \
+  --http-port 8080 \
   --https-port 443 \
   --https-redirect-port 80 \
   --lnd-rpc-authority localhost:10009 \
