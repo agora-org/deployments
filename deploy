@@ -118,17 +118,10 @@ fn main() {
     ssh_unit(("hostnamectl", "set-hostname", &*HOSTNAME));
     run!(%"just run setup");
     eprintln!("successfully deployed to {}: http://{}", *HOSTNAME, *DOMAIN);
-
-    loop {
-        let Status(status) = run_output!(
-            %"curl --fail --output /dev/null --silent --show-error",
-            format!("{}://{}", if *ACME { "https" } else { "http" }, *DOMAIN)
-        );
-
-        if status.success() {
-            break;
-        }
-
+    while !run_output!(
+        %"curl --fail --output /dev/null --silent --show-error",
+        format!("{}://{}", if *ACME { "https" } else { "http" }, *DOMAIN)
+    ) {
         thread::sleep(Duration::from_millis(100));
     }
 }
