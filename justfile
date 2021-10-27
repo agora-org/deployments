@@ -1,12 +1,8 @@
 set positional-arguments
 
-ip := `cat config.yaml | yq --exit-status .$HOSTNAME.ipv4 -r`
 domain := `cat config.yaml | yq --exit-status .$HOSTNAME.domain -r`
-protocol := if `cat config.yaml | yq .$HOSTNAME.acme -r` == 'true' {
-  'https'
-} else {
-  'http'
-}
+ip := `cat config.yaml | yq --exit-status .$HOSTNAME.ipv4 -r`
+protocol := if `cat config.yaml | yq .$HOSTNAME.acme -r` == 'true' { 'https' } else { 'http' }
 
 ssh *args:
   ssh root@{{ ip }} "$@"
