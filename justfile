@@ -1,6 +1,8 @@
 set positional-arguments
 
+domain := `cat config.yaml | yq --exit-status .$HOSTNAME.domain -r`
 ip := `cat config.yaml | yq --exit-status .$HOSTNAME.ipv4 -r`
+protocol := if `cat config.yaml | yq .$HOSTNAME.acme -r` == 'true' { 'https' } else { 'http' }
 
 ssh *args:
   ssh root@{{ ip }} "$@"
@@ -28,8 +30,18 @@ lntop *args:
 sync-justfile:
   scp remote.justfile root@{{ ip }}:justfile
 
-deploy:
+deploy: && test
   ./deploy
+
+test:
+  curl \
+    --fail \
+    --location \
+    --output /dev/null \
+    --show-error \
+    --silent \
+    -w "Server responded with status %{http_code}\n" \
+    {{protocol}}://{{ domain }}/files/trophies/README.md
 
 render-templates:
   mkdir -p tmp
