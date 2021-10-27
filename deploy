@@ -6,7 +6,7 @@
 //! serde_yaml = "=0.8.17"
 //! ```
 use cradle::*;
-use std::{fs, path::Path};
+use std::{fs, path::Path, thread, time::Duration};
 
 lazy_static::lazy_static! {
   static ref HOSTNAME: String = std::env::var("HOSTNAME").expect("HOSTNAME env var not set");
@@ -18,6 +18,7 @@ lazy_static::lazy_static! {
   static ref IP: &'static str = CONFIG["ipv4"].as_str().unwrap();
   static ref CONTENT_REVISION: &'static str = CONFIG["content_revision"].as_str().unwrap();
   static ref DOMAIN: &'static str = CONFIG["domain"].as_str().unwrap();
+  static ref ACME: bool = CONFIG["acme"].as_bool().unwrap();
 }
 
 fn scp(source: &str, destination: &str) {
@@ -117,4 +118,17 @@ fn main() {
     ssh_unit(("hostnamectl", "set-hostname", &*HOSTNAME));
     run!(%"just run setup");
     eprintln!("successfully deployed to {}: http://{}", *HOSTNAME, *DOMAIN);
+
+    loop {
+        let Status(status) = run_output!(
+            %"curl --fail --output /dev/null --silent --show-error",
+            format!("{}://{}", if *ACME { "https" } else { "http" }, *DOMAIN)
+        );
+
+        if status.success() {
+            break;
+        }
+
+        thread::sleep(Duration::from_millis(100));
+    }
 }

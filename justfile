@@ -38,6 +38,7 @@ test:
     --fail \
     --location \
     --output /dev/null \
+    --show-error \
     --silent \
     -w "Server responded with status %{http_code}\n" \
     {{protocol}}://{{ domain }}/files/trophies/README.md
